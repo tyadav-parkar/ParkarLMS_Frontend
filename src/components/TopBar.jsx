@@ -10,7 +10,7 @@ function getInitials(user) {
   return (first + last).toUpperCase();
 }
 
-export default function TopBar() {
+export default function TopBar({ toggleSidebar, isSidebarOpen }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -44,8 +44,31 @@ export default function TopBar() {
 
   return (
     <header className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-6 z-40">
-      {/* Brand */}
-      <span className="text-xl font-bold text-blue-600">Parkar LMS</span>
+      {/* Left section - Menu toggle + Brand */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={toggleSidebar}
+          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          title={isSidebarOpen ? 'Close Sidebar' : 'Open Sidebar'}
+        >
+          {isSidebarOpen ? (
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
+         <button
+          onClick={() => navigate('/')}
+          className="text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
+          title="Go to Dashboard"
+        >
+          Parkar LMS
+        </button>
+      </div>
 
       {/* Right section */}
       <div className="flex items-center gap-4">
