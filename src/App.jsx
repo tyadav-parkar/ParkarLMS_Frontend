@@ -11,6 +11,8 @@ import Profile from './pages/Profile';
 import EmployeeDashboard from './pages/employee/Dashboard';
 import ManagerDashboard from './pages/manager/Dashboard';
 import AdminDashboard from './pages/admin/Dashboard';
+import RolesManagement from './pages/admin/RolesManagement';
+import UserManagement from './pages/admin/UserManagement';
 
 // Must be inside AuthProvider to access useAuth
 function RoleBasedRedirect() {
@@ -59,6 +61,24 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/roles"
+              element={
+                // role_view OR role_edit — either grants access to the page
+                <ProtectedRoute allowedRoles={['admin']} requiredPermissions={['role_view', 'role_edit']}>
+                  <RolesManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                // user_view OR user_edit — either grants access to the page
+                <ProtectedRoute allowedRoles={['admin']} requiredPermissions={['user_view', 'user_edit']}>
+                  <UserManagement />
                 </ProtectedRoute>
               }
             />

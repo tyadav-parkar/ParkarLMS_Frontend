@@ -75,90 +75,89 @@ export default function Sidebar({ isOpen = true, toggleSidebar, isMobile = false
           {(isOpen || isMobile) && <span>Dashboard</span>}
         </NavLink>
 
-        {/* ── Employee personal learning — all roles ────────── */}
+        {/* ── Personal learning — all roles ────────────────── */}
         <SectionLabel label="My Learning" isOpen={isOpen} isMobile={isMobile} />
-        {can('view_own_courses') && (
-          <NavLink to="/employee/courses" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-            <span className="text-lg">📚</span>
-            {(isOpen || isMobile) && <span>My Courses</span>}
-          </NavLink>
-        )}
-        {can('view_own_certificates') && (
-          <NavLink to="/employee/certificates" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-            <span className="text-lg">🏆</span>
-            {(isOpen || isMobile) && <span>Certificates</span>}
-          </NavLink>
-        )}
-        {can('view_own_career_path') && (
-          <NavLink to="/employee/career-path" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-            <span className="text-lg">🛤️</span>
-            {(isOpen || isMobile) && <span>Career Path</span>}
-          </NavLink>
-        )}
+        <NavLink to="/employee/courses" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
+          <span className="text-lg">📚</span>
+          {(isOpen || isMobile) && <span>My Courses</span>}
+        </NavLink>
+        <NavLink to="/employee/certificates" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
+          <span className="text-lg">🏆</span>
+          {(isOpen || isMobile) && <span>Certificates</span>}
+        </NavLink>
+        <NavLink to="/employee/career-path" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
+          <span className="text-lg">🛤️</span>
+          {(isOpen || isMobile) && <span>Career Path</span>}
+        </NavLink>
 
-        {/* ── Manager section — manager + admin only ────────── */}
-        {isRole('manager', 'admin') && (
+        {/* ── Manager section — manager ONLY (not admin) ────── */}
+        {isRole('manager') && (
           <>
             <SectionLabel label="Manager" isOpen={isOpen} isMobile={isMobile} />
-            {can('view_team') && (
-              <NavLink to="/manager/team" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-                <span className="text-lg">👥</span>
-                {(isOpen || isMobile) && <span>My Team</span>}
+            {/* Team Management — role-gated, no permission needed */}
+            <NavLink to="/manager/team" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
+              <span className="text-lg">👥</span>
+              {(isOpen || isMobile) && <span>My Team</span>}
+            </NavLink>
+            {/* Course Management — visible if course_view OR course_assign */}
+            {(can('course_view') || can('course_assign')) && (
+              <NavLink to="/manager/courses" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
+                <span className="text-lg">🎓</span>
+                {(isOpen || isMobile) && <span>Course Management</span>}
               </NavLink>
             )}
-            {can('assign_courses_team') && (
-              <NavLink to="/manager/assignments" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-                <span className="text-lg">📋</span>
-                {(isOpen || isMobile) && <span>Assign Courses</span>}
-              </NavLink>
-            )}
-            {can('view_team_certificates') && (
-              <NavLink to="/manager/certificates" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-                <span className="text-lg">📜</span>
-                {(isOpen || isMobile) && <span>Team Certs</span>}
-              </NavLink>
-            )}
+            <NavLink to="/manager/certificates" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
+              <span className="text-lg">📜</span>
+              {(isOpen || isMobile) && <span>Team Certs</span>}
+            </NavLink>
           </>
         )}
 
-        {/* ── Admin section — admin only ────────────────────── */}
+        {/* ── Admin section — admin ONLY ────────────────────── */}
         {isRole('admin') && (
           <>
             <SectionLabel label="Admin" isOpen={isOpen} isMobile={isMobile} />
-            {can('view_org_analytics') && (
-              <NavLink to="/admin/analytics" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-                <span className="text-lg">📈</span>
-                {(isOpen || isMobile) && <span>Analytics</span>}
-              </NavLink>
-            )}
+            {/* Analytics — always shown (admin superuser, no can() needed) */}
+            <NavLink to="/admin/analytics" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
+              <span className="text-lg">📈</span>
+              {(isOpen || isMobile) && <span>Analytics</span>}
+            </NavLink>
+            {/* Organization — always shown */}
             <NavLink to="/admin/organization" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
               <span className="text-lg">🏢</span>
               {(isOpen || isMobile) && <span>Organization</span>}
             </NavLink>
-            {can('manage_courses') && (
+            {/* Course Management — course_view OR course_edit OR course_assign */}
+            {(can('course_view') || can('course_edit') || can('course_assign')) && (
               <NavLink to="/admin/courses" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
                 <span className="text-lg">🎓</span>
                 {(isOpen || isMobile) && <span>Courses</span>}
               </NavLink>
             )}
-            {can('manage_employees') && (
-              <NavLink to="/admin/employees" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-                <span className="text-lg">🧑‍💼</span>
-                {(isOpen || isMobile) && <span>Employees</span>}
-              </NavLink>
-            )}
-            {can('manage_roles') && (
+            {/* Employee Management — always shown */}
+            <NavLink to="/admin/employees" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
+              <span className="text-lg">🧑‍💼</span>
+              {(isOpen || isMobile) && <span>Employees</span>}
+            </NavLink>
+            {/* Roles & Permissions — role_view OR role_edit */}
+            {(can('role_view') || can('role_edit')) && (
               <NavLink to="/admin/roles" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
                 <span className="text-lg">🔑</span>
                 {(isOpen || isMobile) && <span>Roles</span>}
               </NavLink>
             )}
-            {can('view_logs') && (
-              <NavLink to="/admin/logger" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-                <span className="text-lg">📝</span>
-                {(isOpen || isMobile) && <span>Logger</span>}
+            {/* User Management — user_view OR user_edit */}
+            {(can('user_view') || can('user_edit')) && (
+              <NavLink to="/admin/users" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
+                <span className="text-lg">👤</span>
+                {(isOpen || isMobile) && <span>Users</span>}
               </NavLink>
             )}
+            {/* Logger — always shown */}
+            <NavLink to="/admin/logger" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
+              <span className="text-lg">📝</span>
+              {(isOpen || isMobile) && <span>Logger</span>}
+            </NavLink>
           </>
         )}
 

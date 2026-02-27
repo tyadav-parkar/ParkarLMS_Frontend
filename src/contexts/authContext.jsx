@@ -30,7 +30,8 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [permissions, setPermissions] = useState({});
+  const [permissions, setPermissions] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -46,12 +47,14 @@ export function AuthProvider({ children }) {
     try {
       const { data } = await api.get('/auth/me');
       setUser(data.user);
-      setPermissions(data.permissions || {});
+      setPermissions(data.permissions || []);
+      setRoles(data.user?.roles || [data.user?.role].filter(Boolean));
       setIsAuthenticated(true);
     } catch {
       localStorage.removeItem('token');
       setUser(null);
-      setPermissions({});
+      setPermissions([]);
+      setRoles([]);
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
@@ -75,7 +78,8 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     setUser(null);
-    setPermissions({});
+    setPermissions([]);
+    setRoles([]);
     setIsAuthenticated(false);
     api.post('/auth/logout').catch(() => {});
   }, []);
@@ -84,17 +88,21 @@ export function AuthProvider({ children }) {
   const can = useCallback(
     (permission) => {
       if (!user) return false;
-      if (user.role === 'admin') return true;
-      return permissions[permission] === true;
+      // Admin (any of user's roles includes 'admin') — implicit superuser
+      const userRoles = user.roles || [user.role];
+      if (userRoles.includes('admin')) return true;
+      return Array.isArray(permissions) && permissions.includes(permission);
     },
     [user, permissions]
   );
 
   // ── isRole(...roles) ──────────────────────────────────────────────────
   const isRole = useCallback(
-    (...roles) => {
+    (...rolesToCheck) => {
       if (!user) return false;
-      return roles.includes(user.role);
+      // Check against the full roles array (M2M — user may have multiple roles)
+      const userRoles = user.roles || [user.role];
+      return rolesToCheck.some((r) => userRoles.includes(r));
     },
     [user]
   );
@@ -109,6 +117,7 @@ export function AuthProvider({ children }) {
       value={{
         user,
         permissions,
+        roles,
         isLoading,
         isAuthenticated,
         login,
