@@ -3,11 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 /**
- * Landing page for the backend SSO redirect.
- * URL: /auth/callback?token=<JWT>
+ * AuthCallback — OUTSIDE <AuthProvider> (see App.jsx).
  *
- * Pattern: store token → call /auth/me directly → redirect by role.
- * We don't rely on AuthContext state settling asynchronously.
+ * ── CRITICAL: No useAuth() here ──────────────────────────────────────────────
+ * This component is rendered outside <AuthProvider> in the router tree.
+ * Calling useAuth() outside the provider throws:
+ *   "useAuth must be used inside <AuthProvider>"
+ * That error is silently caught by our try/catch → navigate('/login') → loop.
+ *
+ * Flow:
+ *  1. Extract JWT from URL query param (?token=...)
+ *  2. Store in localStorage
+ *  3. Strip token from URL bar (security)
+ *  4. Call /auth/me to verify token — api.js interceptor attaches it
+ *  5. Navigate to role-based dashboard
+ *  6. AuthProvider mounts on destination page → loadUser() fires naturally
+ *     Token is already in localStorage by then — no race condition.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 export default function AuthCallback() {
   const navigate = useNavigate();
@@ -15,33 +27,45 @@ export default function AuthCallback() {
   useEffect(() => {
     async function processCallback() {
       const params = new URLSearchParams(window.location.search);
-      const token = params.get('token');
+      const token  = params.get('token');
 
       if (!token) {
         navigate('/login?error=no_token', { replace: true });
         return;
       }
 
-      // Store token
+      // ── 1. Store token BEFORE any API call ────────────────────────────────
       localStorage.setItem('token', token);
+      console.log('Token in storage:', token);
+      console.log('Parts:', token?.split('.').length); // must be 3
+      console.log('Length:', token?.length);
 
-      // Remove token from URL bar (security hygiene)
+      // ── 2. Strip token from URL bar ───────────────────────────────────────
       window.history.replaceState({}, document.title, window.location.pathname);
 
       try {
-        // Fetch user directly — token is now in localStorage so interceptor picks it up
+        // ── 3. Verify token via /auth/me ──────────────────────────────────
+        // api.js request interceptor reads token from localStorage and
+        // attaches Authorization: Bearer <token> automatically.
+        // AuthProvider is NOT mounted here so there is zero race condition.
         const { data } = await api.get('/auth/me');
-        const role = data.user?.role;
 
-        if (role === 'admin') {
-          navigate('/admin/analytics', { replace: true });
-        } else if (role === 'manager') {
-          navigate('/manager/dashboard', { replace: true });
+        // ── 4. Navigate by systemRole (falls back to role) ────────────────
+        // Token is in localStorage. AuthProvider on the destination page
+        // will call loadUser() → /auth/me → populate context normally.
+        const effectiveRole = data.user?.systemRole || data.user?.role;
+
+        if (effectiveRole === 'admin') {
+          navigate('/admin/analytics',    { replace: true });
+        } else if (effectiveRole === 'manager') {
+          navigate('/manager/dashboard',  { replace: true });
         } else {
           navigate('/employee/dashboard', { replace: true });
         }
-      } catch {
-        // Token rejected by backend
+
+      } catch (err) {
+        // Token rejected by backend — clear and send back to login
+        console.error('[AuthCallback] /auth/me failed:', err?.response?.status, err?.response?.data);
         localStorage.removeItem('token');
         navigate('/login?error=auth_failed', { replace: true });
       }

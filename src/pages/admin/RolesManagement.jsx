@@ -11,7 +11,7 @@ function RoleForm({ isSystem, onSubmit, onCancel, form, setForm, allPermissions,
       {/* Name */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Role Name {isSystem && <span className="text-gray-400 text-xs">(system – locked)</span>}
+          Role Name {isSystem && <span className="text-gray-400 text-xs">(system - locked)</span>}
         </label>
         <input
           type="text"

@@ -1,163 +1,188 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/authContext';
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
 const linkClass = ({ isActive, isOpen, isMobile }) =>
-  `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
-    isActive
-      ? 'bg-blue-100 text-blue-700'
-      : 'text-gray-600 hover:bg-gray-100'
+  `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+    isActive ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
   } ${!isOpen && !isMobile ? 'justify-center' : ''}`;
 
-const SectionLabel = ({ label, isOpen, isMobile }) => (
-  <p className={`pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider transition-opacity duration-300 ${isOpen || isMobile ? 'px-4' : 'px-2 text-center'}`}>
-    {isOpen || isMobile ? label : '•'}
-  </p>
+const SectionLabel = ({ label, isOpen, isMobile }) =>
+  isOpen || isMobile ? (
+    <p className="pt-4 pb-1 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+      {label}
+    </p>
+  ) : (
+    <p className="pt-4 pb-1 px-2 text-center text-xs text-gray-300">•</p>
+  );
+
+const NavItem = ({ to, icon, label, isOpen, isMobile }) => (
+  <NavLink to={to} className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
+    <span className="text-lg flex-shrink-0">{icon}</span>
+    {(isOpen || isMobile) && <span>{label}</span>}
+  </NavLink>
 );
 
-export default function Sidebar({ isOpen = true, toggleSidebar, isMobile = false }) {
-  const { user, can, isRole } = useAuth();
+// ── Permission → sidebar module mapping ───────────────────────────────────────
+// When an employee or manager gets a custom role, we check these to add
+// extra nav items beyond their base role nav.
+const PERMISSION_NAV_MAP = {
+  role_view:     { to: '/admin/roles',     icon: '🔑', label: 'Roles & Permissions' },
+  role_edit:     { to: '/admin/roles',     icon: '🔑', label: 'Roles & Permissions' },
+  user_view:     { to: '/admin/users',     icon: '👤', label: 'User Management' },
+  user_edit:     { to: '/admin/users',     icon: '👤', label: 'User Management' },
+  course_view:   { to: '/admin/courses',   icon: '🎓', label: 'Course Management' },
+  course_edit:   { to: '/admin/courses',   icon: '🎓', label: 'Course Management' },
+  course_assign: { to: '/manager/courses', icon: '🎓', label: 'Course Management' },
+};
 
-  // Role-specific dashboard path
-  const dashboardPath =
-    user?.role === 'admin'
-      ? '/admin/analytics'
-      : user?.role === 'manager'
-      ? '/manager/dashboard'
-      : '/employee/dashboard';
+function getExtraNavItems({ permissions, systemRole }) {
+  const seen  = new Set();
+  const items = [];
 
-  // On mobile, hide sidebar completely when closed
-  if (isMobile && !isOpen) {
-    return null;
+  for (const [permKey, navItem] of Object.entries(PERMISSION_NAV_MAP)) {
+    if (!permissions.includes(permKey)) continue;
+    // Skip course perms for managers — already in base nav
+    if (systemRole === 'manager' && ['course_assign','course_view','course_edit'].includes(permKey)) continue;
+    if (seen.has(navItem.to)) continue;
+    seen.add(navItem.to);
+    items.push(navItem);
   }
+
+  return items;
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+export default function Sidebar({ isOpen = true, toggleSidebar, isMobile = false }) {
+  const { user, permissions, can, isRole, systemRole } = useAuth();
+
+  const effectiveRole = systemRole || user?.role;
+
+  const extraNavItems = effectiveRole !== 'admin'
+    ? getExtraNavItems({ permissions, systemRole: effectiveRole })
+    : [];
+
+  if (isMobile && !isOpen) return null;
 
   return (
     <aside
-      className={`fixed left-0 top-14 h-[calc(100vh-3.5rem)] bg-white border-r border-gray-200 flex flex-col flex-shrink-0 transition-all duration-300 z-30 ${
+      className={`fixed left-0 top-14 h-[calc(100vh-3.5rem)] bg-white border-r border-gray-200
+        flex flex-col flex-shrink-0 transition-all duration-300 z-30 ${
         isMobile
           ? isOpen ? 'w-56 shadow-xl' : 'w-0 overflow-hidden'
           : isOpen ? 'w-56' : 'w-16'
       }`}
     >
-      {/* Toggle button - hide on mobile since it overlays */}
       {!isMobile && (
         <button
           onClick={toggleSidebar}
-          className="absolute -right-3 top-4 bg-white border border-gray-200 rounded-full p-1 shadow-sm hover:bg-gray-50 transition-colors z-40"
+          className="absolute -right-3 top-4 bg-white border border-gray-200 rounded-full p-1
+            shadow-sm hover:bg-gray-50 transition-colors z-40"
           title={isOpen ? 'Collapse sidebar' : 'Expand sidebar'}
         >
           <svg
             className={`w-4 h-4 text-gray-600 transition-transform duration-300 ${isOpen ? '' : 'rotate-180'}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
       )}
-
-      {/* Role badge */}
-      <div className={`px-4 py-3 border-b border-gray-100 transition-opacity duration-300 ${isOpen || isMobile ? '' : 'px-2'}`}>
+      <div className={`px-4 py-3 border-b border-gray-100 ${!isOpen && !isMobile ? 'px-2' : ''}`}>
         {isOpen || isMobile ? (
-          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-            {user?.role ?? '—'}
-          </span>
+          <div className="flex flex-col gap-1">
+            <span className="inline-block text-xs font-semibold uppercase tracking-widest
+              text-blue-600 bg-blue-50 px-2 py-0.5 rounded w-fit">
+              {effectiveRole ?? '—'}
+            </span>
+            {[...new Set(
+              (user?.roles || []).filter(r =>
+                r !== effectiveRole &&
+                !['admin','manager','employee'].includes(r.toLowerCase())
+              )
+            )].map(r => (
+              <span key={r} className="inline-block text-xs font-medium uppercase tracking-widest
+                text-purple-600 bg-purple-50 px-2 py-0.5 rounded w-fit">
+                {r}
+              </span>
+            ))}
+          </div>
         ) : (
           <span className="block text-center text-lg">👤</span>
         )}
       </div>
 
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto overflow-x-hidden">
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto overflow-x-hidden">
 
-        {/* ── Shared: visible to ALL roles ─────────────────── */}
-        <NavLink to={dashboardPath} className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-          <span className="text-lg">📊</span>
-          {(isOpen || isMobile) && <span>Dashboard</span>}
-        </NavLink>
-
-        {/* ── Personal learning — all roles ────────────────── */}
-        <SectionLabel label="My Learning" isOpen={isOpen} isMobile={isMobile} />
-        <NavLink to="/employee/courses" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-          <span className="text-lg">📚</span>
-          {(isOpen || isMobile) && <span>My Courses</span>}
-        </NavLink>
-        <NavLink to="/employee/certificates" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-          <span className="text-lg">🏆</span>
-          {(isOpen || isMobile) && <span>Certificates</span>}
-        </NavLink>
-        <NavLink to="/employee/career-path" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-          <span className="text-lg">🛤️</span>
-          {(isOpen || isMobile) && <span>Career Path</span>}
-        </NavLink>
-
-        {/* ── Manager section — manager ONLY (not admin) ────── */}
-        {isRole('manager') && (
+        {/* ── EMPLOYEE ─────────────────────────────────────────────────────
+            Base nav: Dashboard, Career Path, My Courses, Certificates
+            Extra: any modules unlocked by custom role permissions          */}
+        {isRole('employee') && !isRole('manager') && !isRole('admin') && (
           <>
-            <SectionLabel label="Manager" isOpen={isOpen} isMobile={isMobile} />
-            {/* Team Management — role-gated, no permission needed */}
-            <NavLink to="/manager/team" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-              <span className="text-lg">👥</span>
-              {(isOpen || isMobile) && <span>My Team</span>}
-            </NavLink>
-            {/* Course Management — visible if course_view OR course_assign */}
-            {(can('course_view') || can('course_assign')) && (
-              <NavLink to="/manager/courses" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-                <span className="text-lg">🎓</span>
-                {(isOpen || isMobile) && <span>Course Management</span>}
-              </NavLink>
+            <NavItem to="/employee/dashboard"    icon="📊" label="Dashboard"    isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/employee/career-path"  icon="🛤️" label="Career Path"  isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/employee/courses"      icon="📚" label="My Courses"   isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/employee/certificates" icon="🏆" label="Certificates" isOpen={isOpen} isMobile={isMobile} />
+            {extraNavItems.length > 0 && (
+              <>
+                <SectionLabel label="Extra Access" isOpen={isOpen} isMobile={isMobile} />
+                {extraNavItems.map(item => (
+                  <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} isOpen={isOpen} isMobile={isMobile} />
+                ))}
+              </>
             )}
-            <NavLink to="/manager/certificates" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-              <span className="text-lg">📜</span>
-              {(isOpen || isMobile) && <span>Team Certs</span>}
-            </NavLink>
           </>
         )}
 
-        {/* ── Admin section — admin ONLY ────────────────────── */}
+        {/* ── MANAGER ──────────────────────────────────────────────────────
+            Base nav:
+              1. Dashboard
+              2. Career Path (own)
+              3. My Team
+              4. Course Management (only if course_view/assign/edit permission)
+              5. Certificates
+            Extra: any modules unlocked by custom role permissions
+            Note: isRole('manager') returns true for managers with custom roles
+            because authContext.isRole() checks systemRole as fallback          */}
+        {isRole('manager') && !isRole('admin') && (
+          <>
+            <NavItem to="/manager/dashboard"     icon="📊" label="Dashboard"         isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/employee/career-path"  icon="🛤️" label="Career Path"       isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/manager/team"          icon="👥" label="My Team"            isOpen={isOpen} isMobile={isMobile} />
+            {(can('course_view') || can('course_assign') || can('course_edit')) && (
+              <NavItem to="/manager/courses"     icon="🎓" label="Course Management" isOpen={isOpen} isMobile={isMobile} />
+            )}
+            <NavItem to="/manager/certificates"  icon="🏆" label="Certificates"      isOpen={isOpen} isMobile={isMobile} />
+            {extraNavItems.length > 0 && (
+              <>
+                <SectionLabel label="Extra Access" isOpen={isOpen} isMobile={isMobile} />
+                {extraNavItems.map(item => (
+                  <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} isOpen={isOpen} isMobile={isMobile} />
+                ))}
+              </>
+            )}
+          </>
+        )}
+
+        {/* ── ADMIN ────────────────────────────────────────────────────────
+            Base nav:
+              1. Analytics Dashboard
+              2. Organization (dept-wise)
+              3. Employees (user management)
+              4. Course Management — gated: course_view/edit/assign
+              5. Roles & Permissions — gated: role_view/edit
+              6. Logger
+            Admin is superuser — can() always true, all gated items visible   */}
         {isRole('admin') && (
           <>
-            <SectionLabel label="Admin" isOpen={isOpen} isMobile={isMobile} />
-            {/* Analytics — always shown (admin superuser, no can() needed) */}
-            <NavLink to="/admin/analytics" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-              <span className="text-lg">📈</span>
-              {(isOpen || isMobile) && <span>Analytics</span>}
-            </NavLink>
-            {/* Organization — always shown */}
-            <NavLink to="/admin/organization" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-              <span className="text-lg">🏢</span>
-              {(isOpen || isMobile) && <span>Organization</span>}
-            </NavLink>
-            {/* Course Management — course_view OR course_edit OR course_assign */}
-            {(can('course_view') || can('course_edit') || can('course_assign')) && (
-              <NavLink to="/admin/courses" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-                <span className="text-lg">🎓</span>
-                {(isOpen || isMobile) && <span>Courses</span>}
-              </NavLink>
-            )}
-            {/* Employee Management — always shown */}
-            <NavLink to="/admin/employees" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-              <span className="text-lg">🧑‍💼</span>
-              {(isOpen || isMobile) && <span>Employees</span>}
-            </NavLink>
-            {/* Roles & Permissions — role_view OR role_edit */}
-            {(can('role_view') || can('role_edit')) && (
-              <NavLink to="/admin/roles" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-                <span className="text-lg">🔑</span>
-                {(isOpen || isMobile) && <span>Roles</span>}
-              </NavLink>
-            )}
-            {/* User Management — user_view OR user_edit */}
-            {(can('user_view') || can('user_edit')) && (
-              <NavLink to="/admin/users" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-                <span className="text-lg">👤</span>
-                {(isOpen || isMobile) && <span>Users</span>}
-              </NavLink>
-            )}
-            {/* Logger — always shown */}
-            <NavLink to="/admin/logger" className={({ isActive }) => linkClass({ isActive, isOpen, isMobile })}>
-              <span className="text-lg">📝</span>
-              {(isOpen || isMobile) && <span>Logger</span>}
-            </NavLink>
+            {/* Admin is superuser — all items always visible, no permission gates */}
+            <NavItem to="/admin/analytics"    icon="📈" label="Analytics"           isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/admin/organization" icon="🏢" label="Organization"        isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/admin/employees"    icon="🧑‍💼" label="Employees"          isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/admin/users"        icon="👤" label="User Management"     isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/admin/courses"      icon="🎓" label="Course Management"   isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/admin/roles"        icon="🔑" label="Roles & Permissions" isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/admin/logger"       icon="📝" label="Logger"              isOpen={isOpen} isMobile={isMobile} />
           </>
         )}
 
@@ -165,4 +190,3 @@ export default function Sidebar({ isOpen = true, toggleSidebar, isMobile = false
     </aside>
   );
 }
-

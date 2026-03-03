@@ -14,81 +14,96 @@ import AdminDashboard from './pages/admin/Dashboard';
 import RolesManagement from './pages/admin/RolesManagement';
 import UserManagement from './pages/admin/UserManagement';
 
-// Must be inside AuthProvider to access useAuth
 function RoleBasedRedirect() {
   const { user } = useAuth();
-  if (user?.role === 'admin') return <Navigate to="/admin/analytics" replace />;
-  if (user?.role === 'manager') return <Navigate to="/manager/dashboard" replace />;
+  const effectiveRole = user?.systemRole || user?.role;
+  if (effectiveRole === 'admin')   return <Navigate to="/admin/analytics"   replace />;
+  if (effectiveRole === 'manager') return <Navigate to="/manager/dashboard" replace />;
   return <Navigate to="/employee/dashboard" replace />;
+}
+
+function AppRoutes() {
+  return (
+    <AuthProvider>
+      <Routes>
+
+        {/* Public */}
+        <Route path="/login"        element={<Login />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
+
+        {/* Protected — all under Layout */}
+        <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+
+          <Route path="/" element={<RoleBasedRedirect />} />
+          <Route path="/profile" element={<Profile />} />
+
+          {/* ── Employee ───────────────────────────────────────────────── */}
+          <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
+
+          {/* ── Manager ────────────────────────────────────────────────── */}
+          <Route
+            path="/manager/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <ManagerDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ── Admin — role-exclusive ──────────────────────────────────── */}
+          <Route
+            path="/admin/analytics"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ── Admin — permission-gated ────────────────────────────────────
+              CHANGE: removed allowedRoles={['admin']} from these two routes.
+
+              Problem: allowedRoles ran FIRST and blocked custom-role users
+              even when they had the required permission. Sidebar showed the
+              link via can() but clicking it hit allowedRoles → /unauthorized.
+
+              Fix: permission-gated pages use ONLY requiredPermissions.
+              allowedRoles is reserved for strictly role-exclusive pages
+              (analytics, manager dashboard) that no custom role should reach. */}
+          <Route
+            path="/admin/roles"
+            element={
+              <ProtectedRoute requiredPermissions={['role_view', 'role_edit']}>
+                <RolesManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute requiredPermissions={['user_view', 'user_edit']}>
+                <UserManagement />
+              </ProtectedRoute>
+            }
+          />
+
+        </Route>
+
+        {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+
+      </Routes>
+    </AuthProvider>
+  );
 }
 
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-
-          {/* Public routes — no layout */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/unauthorized" element={<Unauthorized />} />
-
-          {/* Protected routes — all under Layout */}
-          <Route element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }>
-            <Route path="/" element={<RoleBasedRedirect />} />
-            <Route path="/profile" element={<Profile />} />
-
-            {/* Employee routes */}
-            <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
-
-            {/* Manager routes */}
-            <Route
-              path="/manager/dashboard"
-              element={
-                <ProtectedRoute allowedRoles={['manager', 'admin']}>
-                  <ManagerDashboard />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Admin routes */}
-            <Route
-              path="/admin/analytics"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/roles"
-              element={
-                // role_view OR role_edit — either grants access to the page
-                <ProtectedRoute allowedRoles={['admin']} requiredPermissions={['role_view', 'role_edit']}>
-                  <RolesManagement />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/users"
-              element={
-                // user_view OR user_edit — either grants access to the page
-                <ProtectedRoute allowedRoles={['admin']} requiredPermissions={['user_view', 'user_edit']}>
-                  <UserManagement />
-                </ProtectedRoute>
-              }
-            />
-          </Route>
-
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-
-        </Routes>
-      </AuthProvider>
+      <Routes>
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/*" element={<AppRoutes />} />
+      </Routes>
     </BrowserRouter>
   );
 }
