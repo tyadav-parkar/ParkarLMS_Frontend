@@ -36,9 +36,6 @@ export default function AuthCallback() {
 
       // ── 1. Store token BEFORE any API call ────────────────────────────────
       localStorage.setItem('token', token);
-      console.log('Token in storage:', token);
-      console.log('Parts:', token?.split('.').length); // must be 3
-      console.log('Length:', token?.length);
 
       // ── 2. Strip token from URL bar ───────────────────────────────────────
       window.history.replaceState({}, document.title, window.location.pathname);
