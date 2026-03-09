@@ -1,14 +1,25 @@
-import { useCallback, useEffect, useState } from 'react';
-import api from '../../services/api';
+import { useState } from 'react';
 import { useAuth } from '../../contexts/authContext';
+import { useRoles } from '../../hooks/useRoles';
+import Modal from '../../components/ui/Modal';
+import Pagination from '../../components/ui/Pagination';
+import { TableSkeleton } from '../../components/ui/Skeleton';
 
-// ── RoleForm — module-level so React does NOT remount on every parent render ──
-// (defining it inside the parent causes re-mount on each keystroke → input loses focus)
+const BADGE_COLOURS = [
+  'bg-blue-100 text-blue-700',
+  'bg-green-100 text-green-700',
+  'bg-purple-100 text-purple-700',
+  'bg-yellow-100 text-yellow-700',
+  'bg-pink-100 text-pink-700',
+  'bg-indigo-100 text-indigo-700',
+  'bg-orange-100 text-orange-700',
+];
+
 function RoleForm({ isSystem, onSubmit, onCancel, form, setForm, allPermissions, togglePerm, formError, saving }) {
   const { can } = useAuth();
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      {/* Name */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Role Name {isSystem && <span className="text-gray-400 text-xs">(system - locked)</span>}
@@ -23,7 +34,6 @@ function RoleForm({ isSystem, onSubmit, onCancel, form, setForm, allPermissions,
         />
       </div>
 
-      {/* Description */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
         <textarea
@@ -35,12 +45,11 @@ function RoleForm({ isSystem, onSubmit, onCancel, form, setForm, allPermissions,
         />
       </div>
 
-      {/* Permissions */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Permissions</label>
         <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
           {allPermissions.map((p) => (
-            <label key={p.id} className="flex items-start gap-3 cursor-pointer group">
+            <label key={p.id} className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600"
@@ -81,79 +90,29 @@ function RoleForm({ isSystem, onSubmit, onCancel, form, setForm, allPermissions,
   );
 }
 
-// ── Permission badge colours (cycled by index) ────────────────────────────
-const BADGE_COLOURS = [
-  'bg-blue-100 text-blue-700',
-  'bg-green-100 text-green-700',
-  'bg-purple-100 text-purple-700',
-  'bg-yellow-100 text-yellow-700',
-  'bg-pink-100 text-pink-700',
-  'bg-indigo-100 text-indigo-700',
-  'bg-orange-100 text-orange-700',
-];
-
-// ── Small reusable modal wrapper ──────────────────────────────────────────
-function Modal({ title, onClose, children }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-          >
-            &times;
-          </button>
-        </div>
-        <div className="px-6 py-5">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-// ── Main page ─────────────────────────────────────────────────────────────
 export default function RolesManagement() {
   const { can } = useAuth();
-  const [roles, setRoles]               = useState([]);
-  const [allPermissions, setAllPerms]   = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState('');
+  const {
+    roles,
+    permissions,
+    pagination,
+    loading,
+    error,
+    saving,
+    formError,
+    setFormError,
+    create,
+    update,
+    remove,
+    goToPage,
+  } = useRoles();
 
-  // Modal states
-  const [editModal, setEditModal]       = useState(null); // null | role object
-  const [createModal, setCreateModal]   = useState(false);
-  const [deleteModal, setDeleteModal]   = useState(null); // null | role object
-  const [saving, setSaving]             = useState(false);
-  const [formError, setFormError]       = useState('');
+  const [editModal, setEditModal]     = useState(null);
+  const [createModal, setCreateModal] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(null);
+  const [form, setForm]               = useState({ name: '', description: '', selectedPermIds: [] });
+  const [reassignTo, setReassignTo]   = useState('');
 
-  // Form state (shared for create + edit)
-  const [form, setForm] = useState({ name: '', description: '', selectedPermIds: [] });
-  const [reassignTo, setReassignTo]     = useState('');
-
-  // ── Fetch data ──────────────────────────────────────────────────────────
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const [rolesRes, permsRes] = await Promise.all([
-        api.get('/roles'),
-        api.get('/roles/permissions'),
-      ]);
-      setRoles(rolesRes.data.data ?? []);
-      setAllPerms(permsRes.data.data ?? []);
-    } catch (err) {
-      setError(err.response?.data?.message ?? 'Failed to load data.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // ── Helpers ─────────────────────────────────────────────────────────────
   function openCreate() {
     setForm({ name: '', description: '', selectedPermIds: [] });
     setFormError('');
@@ -162,9 +121,9 @@ export default function RolesManagement() {
 
   function openEdit(role) {
     setForm({
-      name:             role.name,
-      description:      role.description ?? '',
-      selectedPermIds:  (role.permissions ?? []).map((p) => p.id),
+      name:            role.name,
+      description:     role.description ?? '',
+      selectedPermIds: (role.permissions ?? []).map((p) => p.id),
     });
     setFormError('');
     setEditModal(role);
@@ -185,70 +144,42 @@ export default function RolesManagement() {
     }));
   }
 
-  // ── Create ──────────────────────────────────────────────────────────────
   async function handleCreate(e) {
     e.preventDefault();
-    if (!form.name.trim()) { setFormError('Role name is required.'); return; }
-    setSaving(true);
-    setFormError('');
-    try {
-      await api.post('/roles', {
-        name:        form.name.trim(),
-        description: form.description.trim(),
-        permissions: form.selectedPermIds,
-      });
-      setCreateModal(false);
-      fetchData();
-    } catch (err) {
-      setFormError(err.response?.data?.message ?? 'Failed to create role.');
-    } finally {
-      setSaving(false);
+    if (!form.name.trim()) {
+      setFormError('Role name is required.');
+      return;
     }
+    const ok = await create({
+      name:        form.name.trim(),
+      description: form.description.trim(),
+      permissions: form.selectedPermIds,
+    });
+    if (ok) setCreateModal(false);
   }
 
-  // ── Update ──────────────────────────────────────────────────────────────
   async function handleUpdate(e) {
     e.preventDefault();
-    setSaving(true);
-    setFormError('');
-    try {
-      await api.put(`/roles/${editModal.id}`, {
-        name:        form.name.trim(),
-        description: form.description.trim(),
-        permissions: form.selectedPermIds,
-      });
-      setEditModal(null);
-      fetchData();
-    } catch (err) {
-      setFormError(err.response?.data?.message ?? 'Failed to update role.');
-    } finally {
-      setSaving(false);
-    }
+    const ok = await update(editModal.id, {
+      name:        form.name.trim(),
+      description: form.description.trim(),
+      permissions: form.selectedPermIds,
+    });
+    if (ok) setEditModal(null);
   }
 
-  // ── Delete ──────────────────────────────────────────────────────────────
   async function handleDelete(e) {
     e.preventDefault();
-    if (!reassignTo) { setFormError('Please select a role to reassign employees to.'); return; }
-    setSaving(true);
-    setFormError('');
-    try {
-      await api.delete(`/roles/${deleteModal.id}`, {
-        data: { reassign_to_id: Number(reassignTo) },
-      });
-      setDeleteModal(null);
-      fetchData();
-    } catch (err) {
-      setFormError(err.response?.data?.message ?? 'Failed to delete role.');
-    } finally {
-      setSaving(false);
+    if (!reassignTo) {
+      setFormError('Please select a role to reassign employees to.');
+      return;
     }
+    const ok = await remove(deleteModal.id, Number(reassignTo));
+    if (ok) setDeleteModal(null);
   }
 
-  // ── Page ─────────────────────────────────────────────────────────────────
   return (
     <div>
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Roles &amp; Permissions</h1>
@@ -266,24 +197,29 @@ export default function RolesManagement() {
         )}
       </div>
 
-      {/* Error / loading */}
-      {loading && <p className="text-gray-400 text-sm">Loading…</p>}
-      {error   && <p className="text-red-500 text-sm">{error}</p>}
+      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-      {/* Roles table */}
-      {!loading && !error && (
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+      <div className="bg-white rounded-xl shadow overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 border-b">
+            <tr>
+              <th className="px-5 py-3 text-left font-semibold text-gray-600">Role</th>
+              <th className="px-5 py-3 text-left font-semibold text-gray-600">Permissions</th>
+              <th className="px-5 py-3 text-left font-semibold text-gray-600">Users</th>
+              <th className="px-5 py-3 text-right font-semibold text-gray-600">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {loading ? (
+              <TableSkeleton rows={6} cols={4} />
+            ) : roles.length === 0 ? (
               <tr>
-                <th className="px-5 py-3 text-left font-semibold text-gray-600">Role</th>
-                <th className="px-5 py-3 text-left font-semibold text-gray-600">Permissions</th>
-                <th className="px-5 py-3 text-left font-semibold text-gray-600">Users</th>
-                <th className="px-5 py-3 text-right font-semibold text-gray-600">Actions</th>
+                <td colSpan={4} className="px-5 py-8 text-center text-gray-400">
+                  No roles found.
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {roles.map((role) => (
+            ) : (
+              roles.map((role) => (
                 <tr key={role.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
@@ -314,9 +250,7 @@ export default function RolesManagement() {
                       )}
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-gray-600">
-                    {role.employee_count ?? '—'}
-                  </td>
+                  <td className="px-5 py-4 text-gray-600">{role.employee_count ?? '—'}</td>
                   <td className="px-5 py-4 text-right">
                     {can('role_edit') && (
                       <button
@@ -339,20 +273,20 @@ export default function RolesManagement() {
                     )}
                   </td>
                 </tr>
-              ))}
-              {roles.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-5 py-8 text-center text-gray-400">
-                    No roles found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+              ))
+            )}
+          </tbody>
+        </table>
 
-      {/* ── Create modal ─────────────────────────────────────────────────── */}
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          label="roles"
+          onChange={goToPage}
+        />
+      </div>
+
       {createModal && (
         <Modal title="Create New Role" onClose={() => setCreateModal(false)}>
           <RoleForm
@@ -361,7 +295,7 @@ export default function RolesManagement() {
             onCancel={() => setCreateModal(false)}
             form={form}
             setForm={setForm}
-            allPermissions={allPermissions}
+            allPermissions={permissions}
             togglePerm={togglePerm}
             formError={formError}
             saving={saving}
@@ -369,19 +303,15 @@ export default function RolesManagement() {
         </Modal>
       )}
 
-      {/* ── Edit modal ───────────────────────────────────────────────────── */}
       {editModal && (
-        <Modal
-          title={`Edit Role — ${editModal.name}`}
-          onClose={() => setEditModal(null)}
-        >
+        <Modal title={`Edit Role — ${editModal.name}`} onClose={() => setEditModal(null)}>
           <RoleForm
             isSystem={editModal.is_system_role}
             onSubmit={handleUpdate}
             onCancel={() => setEditModal(null)}
             form={form}
             setForm={setForm}
-            allPermissions={allPermissions}
+            allPermissions={permissions}
             togglePerm={togglePerm}
             formError={formError}
             saving={saving}
@@ -389,7 +319,6 @@ export default function RolesManagement() {
         </Modal>
       )}
 
-      {/* ── Delete modal ─────────────────────────────────────────────────── */}
       {deleteModal && (
         <Modal title="Delete Role" onClose={() => setDeleteModal(null)}>
           <form onSubmit={handleDelete} className="space-y-4">

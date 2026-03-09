@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/authContext';
+import { useAuth } from '../../contexts/authContext';
 import NotificationBell from './NotificationBell';
 
 function getInitials(user) {
@@ -16,7 +16,6 @@ export default function TopBar({ toggleSidebar, isSidebarOpen }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleMouseDown(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -44,7 +43,7 @@ export default function TopBar({ toggleSidebar, isSidebarOpen }) {
 
   return (
     <header className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-6 z-40">
-      {/* Left section - Menu toggle + Brand */}
+      {/* Left section - Menu toggle + Logo */}
       <div className="flex items-center gap-3">
         <button
           onClick={toggleSidebar}
@@ -61,12 +60,17 @@ export default function TopBar({ toggleSidebar, isSidebarOpen }) {
             </svg>
           )}
         </button>
-         <button
+
+        <button
           onClick={() => navigate('/')}
-          className="text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
+          className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
           title="Go to Dashboard"
         >
-          Parkar LMS
+          <img
+            src="/src/assets/Parkar_logo.svg"
+            alt="Parkar LMS"
+            className="h-8 w-auto"
+          />
         </button>
       </div>
 
@@ -80,7 +84,6 @@ export default function TopBar({ toggleSidebar, isSidebarOpen }) {
             onClick={() => setDropdownOpen((prev) => !prev)}
             className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            {/* Initials avatar */}
             <span className="w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-semibold flex items-center justify-center">
               {getInitials(user)}
             </span>
@@ -90,7 +93,6 @@ export default function TopBar({ toggleSidebar, isSidebarOpen }) {
             <span className="text-gray-400 text-xs">▾</span>
           </button>
 
-          {/* Dropdown menu */}
           {dropdownOpen && (
             <div className="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
               <button

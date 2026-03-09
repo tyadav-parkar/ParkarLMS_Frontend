@@ -1,13 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/authContext';
-import ProtectedRoute from './components/ProtectedRoute';
-import Layout from './components/Layout';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import Layout from './components/layout/Layout';
 
 // Pages
-import Login from './pages/Login';
-import AuthCallback from './pages/AuthCallback';
-import Unauthorized from './pages/Unauthorized';
-import Profile from './pages/Profile';
+import Login from './pages/auth/Login';
+import AuthCallback from './pages/auth/AuthCallback';
+import Unauthorized from './pages/auth/AuthCallback';
+import Profile from './pages/shared/Profile';
 import EmployeeDashboard from './pages/employee/Dashboard';
 import ManagerDashboard from './pages/manager/Dashboard';
 import AdminDashboard from './pages/admin/Dashboard';

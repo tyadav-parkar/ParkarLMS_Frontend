@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/authContext';
-import api from '../services/api';
+import { useAuth } from '../../contexts/authContext';
+import api from '../../services/api';
 
 export default function Login() {
   const { isAuthenticated, isLoading } = useAuth();

@@ -1,11 +1,11 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  timeout: 30000,
+  baseURL:         import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  timeout:         30000,
+  withCredentials: true,
 });
 
-// ── Request interceptor — attach JWT token ────────────────────────────────
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -17,41 +17,72 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ── Response interceptor — handle 401/403 globally ───────────────────────
+let isRefreshing    = false;
+let failedQueue     = [];
+
+function processQueue(error, token = null) {
+  failedQueue.forEach((p) => {
+    if (error) {
+      p.reject(error);
+    } else {
+      p.resolve(token);
+    }
+  });
+  failedQueue = [];
+}
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response) {
-      if (error.response.status === 401) {
+  async (error) => {
+    const originalRequest = error.config;
 
-        // ── FIX: Never redirect or clear token on auth-related routes ──────
-        // When AuthContext fires loadUser() while /auth/callback is still
-        // processing, it gets a 401 (token not stored yet). Without this
-        // guard the interceptor deletes the token a split-second after
-        // the callback stored it, causing the "token appears then vanishes" bug.
-        const AUTH_ROUTES = ['/auth/callback', '/login', '/unauthorized'];
-        const onAuthRoute = AUTH_ROUTES.some(
-          (path) => window.location.pathname.startsWith(path)
+    const AUTH_ROUTES = ['/auth/callback', '/login', '/unauthorized'];
+    const onAuthRoute  = AUTH_ROUTES.some((p) => window.location.pathname.startsWith(p));
+
+    if (error.response?.status === 401 && !originalRequest._retry && !onAuthRoute) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing            = true;
+
+      try {
+        const { data } = await axios.post(
+          `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/refresh`,
+          {},
+          { withCredentials: true }
         );
 
-        if (!onAuthRoute) {
-          // Only clear + redirect when we're on a real protected page
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-        }
+        const newToken = data.token;
+        localStorage.setItem('token', newToken);
+        api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+        originalRequest.headers.Authorization     = `Bearer ${newToken}`;
 
-        return Promise.reject(error);
-      }
+        processQueue(null, newToken);
+        return api(originalRequest);
 
-      if (error.response.status === 403) {
-        // Same guard — don't redirect away from callback on 403 either
-        const onAuthRoute = window.location.pathname.startsWith('/auth/callback');
-        if (!onAuthRoute) {
-          window.location.href = '/unauthorized';
-        }
-        return Promise.reject(error);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
+
+    if (error.response?.status === 403 && !onAuthRoute) {
+      window.location.href = '/unauthorized';
+    }
+
     return Promise.reject(error);
   }
 );

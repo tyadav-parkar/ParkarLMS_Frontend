@@ -1,32 +1,62 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import api from '../../services/api';
+import { useState } from 'react';
 import { useAuth } from '../../contexts/authContext';
+import { useUsers } from '../../hooks/useUsers';
+import Pagination from '../../components/ui/Pagination';
+import { TableSkeleton } from '../../components/ui/Skeleton';
 
-// ── Assign-role modal ─────────────────────────────────────────────────────
-function AssignRoleModal({ employee, roles, onClose, onSuccess }) {
-  // Pre-select the primary role or the first role in the M2M roles array
-  const primaryRole = employee.roles?.find((r) => r.EmployeeRole?.is_primary)
-    ?? employee.roles?.[0];
-  const [selectedRoleId, setSelectedRoleId] = useState(
-    primaryRole?.id ?? ''
+const ROLE_COLOURS = {
+  admin:    'bg-red-100 text-red-700',
+  manager:  'bg-blue-100 text-blue-700',
+  employee: 'bg-green-100 text-green-700',
+};
+
+function roleBadges(empRoles = []) {
+  if (!empRoles.length) return <span className="text-xs text-gray-400">No role</span>;
+
+  const sorted = [...empRoles].sort(
+    (a, b) => (b.EmployeeRole?.is_primary ? 1 : 0) - (a.EmployeeRole?.is_primary ? 1 : 0)
   );
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {sorted.map((r) => (
+        <span
+          key={r.id}
+          title={r.EmployeeRole?.is_primary ? 'Primary role' : ''}
+          className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize flex items-center gap-0.5 ${
+            ROLE_COLOURS[r.name] ?? 'bg-gray-100 text-gray-700'
+          }`}
+        >
+          {r.EmployeeRole?.is_primary && (
+            <span className="text-amber-500 text-xs">&#9733;</span>
+          )}
+          {r.name}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function AssignRoleModal({ employee, roles, onClose, onSuccess }) {
+  const primaryRole = employee.roles?.find((r) => r.EmployeeRole?.is_primary) ?? employee.roles?.[0];
+  const [selectedRoleId, setSelectedRoleId] = useState(primaryRole?.id ?? '');
   const [saving, setSaving] = useState(false);
-  const [error,  setError]  = useState('');
+  const [error, setError] = useState('');
+
+  const { assignRole } = useUsers();
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!selectedRoleId) { setError('Please select a role.'); return; }
+    if (!selectedRoleId) {
+      setError('Please select a role.');
+      return;
+    }
     setSaving(true);
     setError('');
     try {
-      await api.post('/roles/assign', {
-        employee_id: employee.id,
-        role_id:     Number(selectedRoleId),
-      });
-      onSuccess();
+      await onSuccess(employee.id, Number(selectedRoleId));
     } catch (err) {
       setError(err.response?.data?.message ?? 'Failed to assign role.');
-    } finally {
       setSaving(false);
     }
   }
@@ -51,9 +81,7 @@ function AssignRoleModal({ employee, roles, onClose, onSuccess }) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                New Role
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">New Role</label>
               <select
                 value={selectedRoleId}
                 onChange={(e) => setSelectedRoleId(e.target.value)}
@@ -97,146 +125,48 @@ function AssignRoleModal({ employee, roles, onClose, onSuccess }) {
   );
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────
 export default function UserManagement() {
   const { can } = useAuth();
-  const [users,       setUsers]       = useState([]);
-  const [roles,       setRoles]       = useState([]);
-  const [pagination,  setPagination]  = useState({ page: 1, totalPages: 1, total: 0 });
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState('');
-  const [search,      setSearch]      = useState('');
-  const [roleFilter,  setRoleFilter]  = useState('');
-  const [assignModal, setAssignModal] = useState(null); // employee | null
+  const {
+    users,
+    roles,
+    pagination,
+    loading,
+    error,
+    search,
+    roleFilter,
+    setSearch,
+    setRoleFilter,
+    goToPage,
+    clearFilters,
+    assignRole,
+  } = useUsers();
 
-  const searchTimeout = useRef(null);
+  const [assignModal, setAssignModal] = useState(null);
 
-  // ── Fetch users ───────────────────────────────────────────────────────
-  const fetchUsers = useCallback(
-    async ({ page = 1, searchVal = search, roleVal = roleFilter } = {}) => {
-      setLoading(true);
-      setError('');
-      try {
-        const params = new URLSearchParams({ page, limit: 15 });
-        if (searchVal.trim()) params.append('search', searchVal.trim());
-        if (roleVal)          params.append('role_id', roleVal);
-
-        const { data } = await api.get(`/roles/users?${params}`);
-        setUsers(data.data ?? []);
-        if (data.meta) setPagination({
-          page:       data.meta.page,
-          totalPages: data.meta.pages,
-          total:      data.meta.total,
-        });
-      } catch (err) {
-        setError(err.response?.data?.message ?? 'Failed to load users.');
-      } finally {
-        setLoading(false);
-      }
-    },
-    [search, roleFilter]
-  );
-
-  // ── Fetch roles list (for filter + assign modal) ──────────────────────
-  const fetchRoles = useCallback(async () => {
-    try {
-      const { data } = await api.get('/roles');
-      setRoles(data.data ?? []);
-    } catch {
-      // non-critical
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchRoles();
-    fetchUsers({ page: 1 });
-  }, [fetchRoles]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Search with debounce ──────────────────────────────────────────────
-  function handleSearchChange(val) {
-    setSearch(val);
-    clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => {
-      fetchUsers({ page: 1, searchVal: val });
-    }, 400);
-  }
-
-  function handleRoleFilter(val) {
-    setRoleFilter(val);
-    fetchUsers({ page: 1, roleVal: val });
-  }
-
-  function handlePage(newPage) {
-    fetchUsers({ page: newPage });
-  }
-
-  function handleAssignSuccess() {
+  async function handleAssignSuccess(employeeId, roleId) {
+    await assignRole(employeeId, roleId);
     setAssignModal(null);
-    fetchUsers({ page: pagination.page });
   }
 
-  // ── Role badges ──────────────────────────────────────────────────
-  const ROLE_COLOURS = {
-    admin:    'bg-red-100 text-red-700',
-    manager:  'bg-blue-100 text-blue-700',
-    employee: 'bg-green-100 text-green-700',
-  };
-
-  function roleBadge(role) {
-    const name   = role?.name ?? 'unknown';
-    const colour = ROLE_COLOURS[name] ?? 'bg-gray-100 text-gray-700';
-    return (
-      <span key={name} className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${colour}`}>
-        {name}
-      </span>
-    );
-  }
-
-  // Renders all M2M role badges for an employee row (primary role shown first with a star)
-  function roleBadges(empRoles = []) {
-    if (!empRoles.length) return <span className="text-xs text-gray-400">No role</span>;
-    const sorted = [...empRoles].sort(
-      (a, b) => (b.EmployeeRole?.is_primary ? 1 : 0) - (a.EmployeeRole?.is_primary ? 1 : 0)
-    );
-    return (
-      <div className="flex flex-wrap gap-1">
-        {sorted.map((r) => (
-          <span
-            key={r.id}
-            title={r.EmployeeRole?.is_primary ? 'Primary role' : ''}
-            className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize flex items-center gap-0.5 ${ROLE_COLOURS[r.name] ?? 'bg-gray-100 text-gray-700'}`}
-          >
-            {r.EmployeeRole?.is_primary && <span className="text-amber-500 text-xs">&#9733;</span>}
-            {r.name}
-          </span>
-        ))}
-      </div>
-    );
-  }
-
-  // ── Page ──────────────────────────────────────────────────────────────
   return (
     <div>
-      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">User Management</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          View employees and assign roles.
-        </p>
+        <p className="text-sm text-gray-500 mt-0.5">View employees and assign roles.</p>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-4">
         <input
           type="text"
           value={search}
-          onChange={(e) => handleSearchChange(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, email or employee #…"
           className="border rounded-lg px-3 py-2 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <select
           value={roleFilter}
-          onChange={(e) => handleRoleFilter(e.target.value)}
+          onChange={(e) => setRoleFilter(e.target.value)}
           className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All Roles</option>
@@ -248,7 +178,7 @@ export default function UserManagement() {
         </select>
         {(search || roleFilter) && (
           <button
-            onClick={() => { setSearch(''); setRoleFilter(''); fetchUsers({ page: 1, searchVal: '', roleVal: '' }); }}
+            onClick={clearFilters}
             className="text-sm text-gray-500 hover:text-gray-700 underline"
           >
             Clear filters
@@ -259,10 +189,8 @@ export default function UserManagement() {
         </span>
       </div>
 
-      {/* Error / loading */}
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-      {/* Table */}
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b">
@@ -276,11 +204,7 @@ export default function UserManagement() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {loading ? (
-              <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-gray-400">
-                  Loading…
-                </td>
-              </tr>
+              <TableSkeleton rows={8} cols={5} />
             ) : users.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-5 py-8 text-center text-gray-400">
@@ -296,15 +220,11 @@ export default function UserManagement() {
                     </div>
                     <div className="text-xs text-gray-500">{u.email}</div>
                   </td>
-                  <td className="px-5 py-4 text-gray-600">
-                    {u.employee_number ?? '—'}
-                  </td>
+                  <td className="px-5 py-4 text-gray-600">{u.employee_number ?? '—'}</td>
                   <td className="px-5 py-4 text-gray-600">
                     {u.department?.name ?? u.Department?.name ?? '—'}
                   </td>
-                  <td className="px-5 py-4">
-                    {roleBadges(u.roles || [])}
-                  </td>
+                  <td className="px-5 py-4">{roleBadges(u.roles || [])}</td>
                   <td className="px-5 py-4 text-right">
                     {can('user_edit') ? (
                       <button
@@ -323,31 +243,15 @@ export default function UserManagement() {
           </tbody>
         </table>
 
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t bg-gray-50 text-sm text-gray-600">
-            <button
-              onClick={() => handlePage(pagination.page - 1)}
-              disabled={pagination.page <= 1}
-              className="px-3 py-1 rounded border hover:bg-white disabled:opacity-40"
-            >
-              &larr; Prev
-            </button>
-            <span>
-              Page {pagination.page} of {pagination.totalPages}
-            </span>
-            <button
-              onClick={() => handlePage(pagination.page + 1)}
-              disabled={pagination.page >= pagination.totalPages}
-              className="px-3 py-1 rounded border hover:bg-white disabled:opacity-40"
-            >
-              Next &rarr;
-            </button>
-          </div>
-        )}
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          label="employees"
+          onChange={goToPage}
+        />
       </div>
 
-      {/* Assign modal */}
       {assignModal && (
         <AssignRoleModal
           employee={assignModal}
