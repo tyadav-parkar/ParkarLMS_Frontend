@@ -14,10 +14,7 @@ export function useRoles() {
     setLoading(true);
     setError(null);
     try {
-      const [rolesData, permsData] = await Promise.all([
-        roleService.getAll(page),
-        roleService.getPermissions(),
-      ]);
+      const rolesData = await roleService.getAll(page);
       // Handle both paginated response { data, pagination } and plain array
       setRoles(rolesData.data ?? rolesData);
       setPagination(
@@ -27,7 +24,6 @@ export function useRoles() {
           total: Array.isArray(rolesData) ? rolesData.length : 0,
         }
       );
-      setPermissions(permsData);
     } catch (err) {
       setError(err.response?.data?.message ?? 'Failed to load roles.');
     } finally {
@@ -38,6 +34,11 @@ export function useRoles() {
   useEffect(() => {
     load(1);
   }, [load]);
+
+  // Permissions are static master data — fetch once on mount only
+  useEffect(() => {
+    roleService.getPermissions().then(setPermissions).catch(() => {});
+  }, []);
 
   const goToPage = (page) => load(page);
 

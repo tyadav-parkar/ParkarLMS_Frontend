@@ -6,7 +6,7 @@ import Layout from './components/layout/Layout';
 // Pages
 import Login from './pages/auth/Login';
 import AuthCallback from './pages/auth/AuthCallback';
-import Unauthorized from './pages/auth/AuthCallback';
+import Unauthorized from './pages/auth/Unauthorized';
 import Profile from './pages/shared/Profile';
 import EmployeeDashboard from './pages/employee/Dashboard';
 import ManagerDashboard from './pages/manager/Dashboard';
@@ -29,6 +29,7 @@ function AppRoutes() {
 
         {/* Public */}
         <Route path="/login"        element={<Login />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />   
         <Route path="/unauthorized" element={<Unauthorized />} />
 
         {/* Protected — all under Layout */}

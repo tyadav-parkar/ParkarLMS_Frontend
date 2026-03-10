@@ -138,7 +138,7 @@ export default function Sidebar({ isOpen = true, toggleSidebar, isMobile = false
           <>
             <NavItem to="/admin/analytics"    icon="📈"  label="Analytics"           isOpen={isOpen} isMobile={isMobile} />
             <NavItem to="/admin/organization" icon="🏢"  label="Organization"        isOpen={isOpen} isMobile={isMobile} />
-            <NavItem to="/admin/employees"    icon="🧑‍💼" label="Employees"           isOpen={isOpen} isMobile={isMobile} />
+            {/* <NavItem to="/admin/employees"    icon="🧑‍💼" label="Employees"           isOpen={isOpen} isMobile={isMobile} /> */}
             <NavItem to="/admin/users"        icon="👤"  label="User Management"     isOpen={isOpen} isMobile={isMobile} />
             <NavItem to="/admin/courses"      icon="🎓"  label="Course Management"   isOpen={isOpen} isMobile={isMobile} />
             <NavItem to="/admin/roles"        icon="🔑"  label="Roles & Permissions" isOpen={isOpen} isMobile={isMobile} />

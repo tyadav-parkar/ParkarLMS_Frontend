@@ -4,6 +4,8 @@ import { useRoles } from '../../hooks/useRoles';
 import Modal from '../../components/ui/Modal';
 import Pagination from '../../components/ui/Pagination';
 import { TableSkeleton } from '../../components/ui/Skeleton';
+import RoleForm from '../../components/roles/RoleForm';
+import DeleteRoleForm from '../../components/roles/DeleteRoleForm';
 
 const BADGE_COLOURS = [
   'bg-blue-100 text-blue-700',
@@ -14,81 +16,6 @@ const BADGE_COLOURS = [
   'bg-indigo-100 text-indigo-700',
   'bg-orange-100 text-orange-700',
 ];
-
-function RoleForm({ isSystem, onSubmit, onCancel, form, setForm, allPermissions, togglePerm, formError, saving }) {
-  const { can } = useAuth();
-
-  return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Role Name {isSystem && <span className="text-gray-400 text-xs">(system - locked)</span>}
-        </label>
-        <input
-          type="text"
-          value={form.name}
-          onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-          disabled={isSystem}
-          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
-          placeholder="e.g. Team Lead"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-        <textarea
-          rows={2}
-          value={form.description}
-          onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          placeholder="Brief description of this role…"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Permissions</label>
-        <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
-          {allPermissions.map((p) => (
-            <label key={p.id} className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600"
-                checked={form.selectedPermIds.includes(p.id)}
-                onChange={() => togglePerm(p.id)}
-                disabled={!can('role_edit')}
-              />
-              <span className="text-sm">
-                <span className="font-medium text-gray-800">{p.label}</span>
-                {p.description && (
-                  <span className="block text-xs text-gray-500">{p.description}</span>
-                )}
-              </span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {formError && <p className="text-red-500 text-sm">{formError}</p>}
-
-      <div className="flex justify-end gap-3 pt-1">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-sm rounded-lg border text-gray-600 hover:bg-gray-50"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
-        >
-          {saving ? 'Saving…' : 'Save'}
-        </button>
-      </div>
-    </form>
-  );
-}
 
 export default function RolesManagement() {
   const { can } = useAuth();
@@ -197,7 +124,7 @@ export default function RolesManagement() {
         )}
       </div>
 
-      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+      {/* {error && <p className="text-red-500 text-sm mb-4">{error}</p>} */}
 
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <table className="w-full text-sm">
@@ -321,49 +248,16 @@ export default function RolesManagement() {
 
       {deleteModal && (
         <Modal title="Delete Role" onClose={() => setDeleteModal(null)}>
-          <form onSubmit={handleDelete} className="space-y-4">
-            <p className="text-sm text-gray-700">
-              You are about to delete the{' '}
-              <span className="font-semibold">{deleteModal.name}</span> role. All
-              employees currently assigned to this role must be reassigned first.
-            </p>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Reassign employees to
-              </label>
-              <select
-                value={reassignTo}
-                onChange={(e) => setReassignTo(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">— select a role —</option>
-                {roles
-                  .filter((r) => r.id !== deleteModal.id)
-                  .map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
-            {formError && <p className="text-red-500 text-sm">{formError}</p>}
-            <div className="flex justify-end gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => setDeleteModal(null)}
-                className="px-4 py-2 text-sm rounded-lg border text-gray-600 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
-              >
-                {saving ? 'Deleting…' : 'Delete Role'}
-              </button>
-            </div>
-          </form>
+          <DeleteRoleForm
+            roles={roles}
+            deletingRole={deleteModal}
+            reassignTo={reassignTo}
+            setReassignTo={setReassignTo}
+            formError={formError}
+            saving={saving}
+            onCancel={() => setDeleteModal(null)}
+            onSubmit={handleDelete}
+          />
         </Modal>
       )}
     </div>

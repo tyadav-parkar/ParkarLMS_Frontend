@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/authContext';
 import { useUsers } from '../../hooks/useUsers';
 import Pagination from '../../components/ui/Pagination';
 import { TableSkeleton } from '../../components/ui/Skeleton';
+import AssignRoleModal from '../../components/users/AssignRoleModal';
 
 const ROLE_COLOURS = {
   admin:    'bg-red-100 text-red-700',
@@ -33,94 +34,6 @@ function roleBadges(empRoles = []) {
           {r.name}
         </span>
       ))}
-    </div>
-  );
-}
-
-function AssignRoleModal({ employee, roles, onClose, onSuccess }) {
-  const primaryRole = employee.roles?.find((r) => r.EmployeeRole?.is_primary) ?? employee.roles?.[0];
-  const [selectedRoleId, setSelectedRoleId] = useState(primaryRole?.id ?? '');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-
-  const { assignRole } = useUsers();
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!selectedRoleId) {
-      setError('Please select a role.');
-      return;
-    }
-    setSaving(true);
-    setError('');
-    try {
-      await onSuccess(employee.id, Number(selectedRoleId));
-    } catch (err) {
-      setError(err.response?.data?.message ?? 'Failed to assign role.');
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-800">Assign Role</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">
-            &times;
-          </button>
-        </div>
-        <div className="px-6 py-5">
-          <p className="text-sm text-gray-600 mb-4">
-            Assigning role to{' '}
-            <span className="font-semibold text-gray-800">
-              {employee.first_name} {employee.last_name}
-            </span>{' '}
-            <span className="text-gray-400">({employee.email})</span>
-          </p>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">New Role</label>
-              <select
-                value={selectedRoleId}
-                onChange={(e) => setSelectedRoleId(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">— select a role —</option>
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
-              Note: the new role takes effect on the employee&apos;s next login.
-            </p>
-
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-
-            <div className="flex justify-end gap-3 pt-1">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-sm rounded-lg border text-gray-600 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
-              >
-                {saving ? 'Saving…' : 'Assign Role'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
     </div>
   );
 }

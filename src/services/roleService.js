@@ -45,7 +45,7 @@ export const roleService = {
   },
 
   assignToEmployee: async (employeeId, roleId) => {
-    const { data } = await api.post('/roles/assign', {
+    const { data } = await api.post('/users/assign', {
       employee_id: employeeId,
       role_id:     roleId,
     });
