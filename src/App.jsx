@@ -13,6 +13,7 @@ import ManagerDashboard from './pages/manager/Dashboard';
 import AdminDashboard from './pages/admin/Dashboard';
 import RolesManagement from './pages/admin/RolesManagement';
 import UserManagement from './pages/admin/UserManagement';
+import TeamPage from "./pages/manager/MyTeam";
 
 function RoleBasedRedirect() {
   const { user } = useAuth();
@@ -47,6 +48,14 @@ function AppRoutes() {
             element={
               <ProtectedRoute allowedRoles={['manager', 'admin']}>
                 <ManagerDashboard />
+              </ProtectedRoute>
+            }
+          />
+           <Route
+            path="/manager/team"
+            element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <TeamPage />
               </ProtectedRoute>
             }
           />
