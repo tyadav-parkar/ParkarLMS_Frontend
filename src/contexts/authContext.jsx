@@ -1,77 +1,59 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import api from '../services/api';
-
+ 
 const AuthContext = createContext(null);
-
+ 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [permissions, setPermissions] = useState([]);
-  const [roles, setRoles] = useState([]);
-  const [systemRole, setSystemRole] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user,            setUser]            = useState(null);
+  const [permissions,     setPermissions]     = useState([]);
+  const [roles,           setRoles]           = useState([]);
+  const [systemRole,      setSystemRole]      = useState(null);
+  const [isLoading,       setIsLoading]       = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  const loadUser = useCallback(async () => {
-    if (window.location.pathname === '/auth/callback') {
-      setIsLoading(false);
-      return;
-    }
-
-    const token = localStorage.getItem('token');
-
-    // No token at all — nothing to restore, skip the API call
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
-
-    // Token exists (even if expired) — always attempt /auth/me.
-    // If the access token is expired the Axios 401 interceptor in api.js
-    // will call /auth/refresh using the httpOnly cookie, save the new
-    // access token, and retry this request transparently.
-    // Only if refresh also fails does the interceptor redirect to /login.
-    try {
-      const { data } = await api.get('/auth/me');
-      setUser(data.user);
-      setPermissions(data.permissions || []);
-      setRoles(data.user?.roles || [data.user?.role].filter(Boolean));
-      setSystemRole(data.user?.systemRole || null);
-      setIsAuthenticated(true);
-    } catch {
-      // Refresh also failed — clear everything and let ProtectedRoute redirect
-      localStorage.removeItem('token');
-      setUser(null);
-      setPermissions([]);
-      setRoles([]);
-      setSystemRole(null);
-      setIsAuthenticated(false);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadUser();
-  }, [loadUser]);
-
-  const login = useCallback(
-    (token) => {
-      localStorage.setItem('token', token);
-      loadUser();
-    },
-    [loadUser]
-  );
-
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
+ 
+  const clearSession = useCallback(() => {
     setUser(null);
     setPermissions([]);
     setRoles([]);
     setSystemRole(null);
     setIsAuthenticated(false);
-    api.post('/auth/logout').catch(() => {});
   }, []);
-
+ 
+  const loadUser = useCallback(async (force = false) => {
+    // AuthCallback handles its own auth flow — don't interfere
+    if (!force && window.location.pathname === '/auth/callback') {
+      setIsLoading(false);
+      return;
+    }
+ 
+    try {
+      const { data } = await api.get('/auth/session');
+      if (data.authenticated) {
+        setUser(data.user);
+        setPermissions(data.permissions || []);
+        setRoles(data.user?.roles || [data.user?.role].filter(Boolean));
+        setSystemRole(data.user?.systemRole || null);
+        setIsAuthenticated(true);
+      } else {
+        clearSession();
+      }
+    } catch {
+      clearSession();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clearSession]);
+ 
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
+ 
+  const logout = useCallback(async () => {
+    // Backend clears both lms_access and lms_refresh cookies
+    await api.post('/auth/logout').catch(() => {});
+    clearSession();
+  }, [clearSession]);
+ 
   const can = useCallback(
     (permission) => {
       if (!user) return false;
@@ -81,7 +63,7 @@ export function AuthProvider({ children }) {
     },
     [user, permissions, systemRole]
   );
-
+ 
   const isRole = useCallback(
     (...rolesToCheck) => {
       if (!user) return false;
@@ -92,11 +74,11 @@ export function AuthProvider({ children }) {
     },
     [user, systemRole]
   );
-
+ 
   const refreshUser = useCallback(() => {
-    loadUser();
+    return loadUser(true);
   }, [loadUser]);
-
+ 
   return (
     <AuthContext.Provider
       value={{
@@ -106,7 +88,6 @@ export function AuthProvider({ children }) {
         systemRole,
         isLoading,
         isAuthenticated,
-        login,
         logout,
         can,
         isRole,
@@ -117,9 +98,10 @@ export function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
-
+ 
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');
   return ctx;
 }
+ 

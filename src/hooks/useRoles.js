@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { roleService } from '../services/roleService';
+import { useAuth } from '../contexts/authContext';
 
 export function useRoles() {
+  const { refreshUser } = useAuth();
   const [roles, setRoles] = useState([]);
   const [permissions, setPermissions] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
@@ -48,6 +50,7 @@ export function useRoles() {
     try {
       await roleService.create(payload);
       await load(pagination.page);
+      refreshUser();
       return true;
     } catch (err) {
       setFormError(err.response?.data?.message ?? 'Failed to create role.');
@@ -63,6 +66,7 @@ export function useRoles() {
     try {
       await roleService.update(id, payload);
       await load(pagination.page);
+      refreshUser();
       return true;
     } catch (err) {
       setFormError(err.response?.data?.message ?? 'Failed to update role.');
@@ -78,6 +82,7 @@ export function useRoles() {
     try {
       await roleService.delete(id, reassignToId);
       await load(pagination.page);
+      refreshUser();
       return true;
     } catch (err) {
       setFormError(err.response?.data?.message ?? 'Failed to delete role.');
