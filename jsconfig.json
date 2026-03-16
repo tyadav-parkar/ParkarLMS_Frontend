@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@shared": ["src/modules/shared/index.js"],
+      "@shared/*": ["src/modules/shared/*"],
+      "@auth": ["src/modules/auth/index.js"],
+      "@auth/*": ["src/modules/auth/*"],
+      "@roles": ["src/modules/roles/index.js"],
+      "@roles/*": ["src/modules/roles/*"],
+      "@users": ["src/modules/users/index.js"],
+      "@users/*": ["src/modules/users/*"],
+      "@team": ["src/modules/team/index.js"],
+      "@team/*": ["src/modules/team/*"],
+      "@dashboard": ["src/modules/dashboard/index.js"],
+      "@dashboard/*": ["src/modules/dashboard/*"],
+      "@profile": ["src/modules/profile/index.js"],
+      "@profile/*": ["src/modules/profile/*"],
+      "@error": ["src/modules/error/index.js"],
+      "@error/*": ["src/modules/error/*"],
+      "@modules/*": ["src/modules/*"]
+    }
+  },
+  "include": ["src"]
+}

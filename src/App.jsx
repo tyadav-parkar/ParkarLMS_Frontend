@@ -1,19 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/authContext';
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import Layout from './components/layout/Layout';
+import { AuthProvider, useAuth, ProtectedRoute } from '@auth';
+import { Layout } from '@shared';
  
 // Pages
-import Login from './pages/auth/Login';
-import AuthCallback from './pages/auth/AuthCallback';
-import Unauthorized from './pages/auth/Unauthorized';
-import Profile from './pages/shared/Profile';
-import EmployeeDashboard from './pages/employee/Dashboard';
-import ManagerDashboard from './pages/manager/Dashboard';
-import AdminDashboard from './pages/admin/Dashboard';
-import RolesManagement from './pages/admin/RolesManagement';
-import UserManagement from './pages/admin/UserManagement';
-import TeamPage from "./pages/manager/MyTeam";
+import { Login, AuthCallback, Unauthorized } from '@auth';
+import { Profile } from '@profile';
+import { EmployeeDashboard, ManagerDashboard, AdminDashboard } from '@dashboard';
+import { RolesManagement } from '@roles';
+import { UserManagement } from '@users';
+import { MyTeam as TeamPage } from '@team';
  
 function RoleBasedRedirect() {
   const { user } = useAuth();
