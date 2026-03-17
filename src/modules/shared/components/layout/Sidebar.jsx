@@ -128,6 +128,7 @@ export default function Sidebar({ isOpen = true, toggleSidebar, isMobile = false
             <NavItem to="/admin/courses" icon="🎓" label="Course Management" isOpen={isOpen} isMobile={isMobile} />
             <NavItem to="/admin/roles" icon="🔑" label="Roles & Permissions" isOpen={isOpen} isMobile={isMobile} />
             <NavItem to="/admin/logger" icon="📝" label="Logger" isOpen={isOpen} isMobile={isMobile} />
+             <NavItem to="/admin/import" icon="📥" label="Import Employees"  isOpen={isOpen} isMobile={isMobile} />
           </>
         )}
       </nav>

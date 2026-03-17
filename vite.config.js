@@ -19,6 +19,8 @@ export default defineConfig({
       '@profile': path.resolve(__dirname, 'src/modules/profile'),
       '@error': path.resolve(__dirname, 'src/modules/error'),
       '@modules': path.resolve(__dirname, 'src/modules'),
+      '@import':    path.resolve(__dirname, 'src/modules/import'),
+
     },
   },
   plugins: [react(),
