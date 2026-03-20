@@ -10,6 +10,16 @@ import { RolesManagement }                   from '@roles';
 import { UserManagement }                    from '@users';
 import { MyTeam as TeamPage }                from '@team';
 import { ImportPage }                        from '@import';
+import EmployeeCertificates from '../src/modules/certificates/pages/EmployeeCertificates';
+import ManagerCertificates  from '../src/modules/certificates/pages/ManagerCertificates';
+import  EmployeeCourses  from '../src/modules/courses/pages/EmployeeCourses';
+import ManagerCourses  from '../src/modules/courses/pages/ManagerCourses';
+import  AdminCourses from '../src/modules/courses/pages/AdminCourses';
+import EmployeeCareerPath from '../src/modules/carrerPath/pages/EmployeeCareerPath';
+import ManagerCareerPath from '../src/modules/carrerPath/pages/ManagerCareerPath';
+
+
+
 
 function RoleBasedRedirect() {
   const { user } = useAuth();
@@ -37,6 +47,10 @@ function AppRoutes() {
 
           {/* ── Employee ───────────────────────────────────────────────── */}
           <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
+          <Route path="/employee/certificates" element={<EmployeeCertificates />} />
+          <Route path="/employee/courses" element={<EmployeeCourses />} />
+          <Route path="/employee/career-path" element={<EmployeeCareerPath />} />
+
 
           {/* ── Manager ────────────────────────────────────────────────── */}
           <Route
@@ -55,6 +69,11 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
+          <Route path="/manager/certificates" element={<ProtectedRoute allowedRoles={['manager']}><ManagerCertificates /></ProtectedRoute>} />
+          <Route path="/manager/courses" element={<ProtectedRoute allowedRoles={['manager']}><ManagerCourses /></ProtectedRoute>} />
+          <Route path="/manager/career-path" element={<ProtectedRoute allowedRoles={['manager']}><ManagerCareerPath /></ProtectedRoute>} /> 
+
+
 
           {/* ── Admin — role-exclusive ──────────────────────────────────── */}
           <Route
@@ -83,6 +102,8 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
+          <Route path="/admin/courses" element={<ProtectedRoute allowedRoles={['admin']}><AdminCourses /></ProtectedRoute>} />
+
 
           {/* ── Admin — Import Employees ──────────────────────────────────
               MUST be inside this Layout wrapper so sidebar + topbar render.

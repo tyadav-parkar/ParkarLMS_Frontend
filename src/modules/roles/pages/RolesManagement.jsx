@@ -70,10 +70,7 @@ export default function RolesManagement() {
 
   async function handleCreate(e) {
     e.preventDefault();
-    if (!form.name.trim()) {
-      setFormError('Role name is required.');
-      return;
-    }
+    if (!form.name.trim()) { setFormError('Role name is required.'); return; }
     const ok = await create({
       name:        form.name.trim(),
       description: form.description.trim(),
@@ -94,10 +91,7 @@ export default function RolesManagement() {
 
   async function handleDelete(e) {
     e.preventDefault();
-    if (!reassignTo) {
-      setFormError('Please select a role to reassign employees to.');
-      return;
-    }
+    if (!reassignTo) { setFormError('Please select a role to reassign employees to.'); return; }
     const ok = await remove(deleteModal.id, Number(reassignTo));
     if (ok) setDeleteModal(null);
   }
@@ -107,30 +101,26 @@ export default function RolesManagement() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Roles &amp; Permissions</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Manage what each role can access across the LMS.
-          </p>
+          <p className="text-sm text-gray-500 mt-0.5">Manage what each role can access across the LMS.</p>
         </div>
         {can('role_edit') && (
           <button
             onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
           >
             + New Role
           </button>
         )}
       </div>
 
-      {/* {error && <p className="text-red-500 text-sm mb-4">{error}</p>} */}
-
-      <div className="bg-white rounded-xl shadow overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
-              <th className="px-5 py-3 text-left font-semibold text-gray-600">Role</th>
-              <th className="px-5 py-3 text-left font-semibold text-gray-600">Permissions</th>
-              <th className="px-5 py-3 text-left font-semibold text-gray-600">Users</th>
-              <th className="px-5 py-3 text-right font-semibold text-gray-600">Actions</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Role</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Permissions</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Users</th>
+              <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -138,24 +128,22 @@ export default function RolesManagement() {
               <TableSkeleton rows={6} cols={4} />
             ) : roles.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-5 py-8 text-center text-gray-400">
-                  No roles found.
-                </td>
+                <td colSpan={4} className="px-5 py-8 text-center text-gray-400">No roles found.</td>
               </tr>
             ) : (
               roles.map((role) => (
                 <tr key={role.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-800 capitalize">{role.name}</span>
+                      <span className="font-semibold text-gray-800 capitalize">{role.name}</span>
                       {role.is_system_role && (
-                        <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">
+                        <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-semibold uppercase tracking-wide">
                           system
                         </span>
                       )}
                     </div>
                     {role.description && (
-                      <p className="text-xs text-gray-500 mt-0.5">{role.description}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{role.description}</p>
                     )}
                   </td>
                   <td className="px-5 py-4">
@@ -176,23 +164,22 @@ export default function RolesManagement() {
                   </td>
                   <td className="px-5 py-4 text-gray-600">{role.employee_count ?? '—'}</td>
                   <td className="px-5 py-4 text-right">
-                    {can('role_edit') && (
-                      <button
-                        onClick={() => openEdit(role)}
-                        className="text-blue-600 hover:underline text-xs font-medium mr-4"
-                      >
-                        Edit
-                      </button>
-                    )}
-                    {can('role_edit') && !role.is_system_role && (
-                      <button
-                        onClick={() => openDelete(role)}
-                        className="text-red-500 hover:underline text-xs font-medium"
-                      >
-                        Delete
-                      </button>
-                    )}
-                    {!can('role_edit') && (
+                    {can('role_edit') && !role.is_system_role ? (
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => openEdit(role)}
+                          className="text-blue-600 hover:underline text-xs font-semibold"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => openDelete(role)}
+                          className="text-red-500 hover:underline text-xs font-semibold"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ) : (
                       <span className="text-gray-400 text-xs">View only</span>
                     )}
                   </td>

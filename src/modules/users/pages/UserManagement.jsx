@@ -3,6 +3,7 @@ import { useAuth } from '@auth';
 import { Pagination, TableSkeleton } from '@shared';
 import { useUsers } from '../hooks/useUsers';
 import AssignRoleModal from '../components/AssignRoleModal';
+import UserDetailModal from '../components/UserDetailModal';
 
 const ROLE_COLOURS = {
   admin:    'bg-red-100 text-red-700',
@@ -10,26 +11,22 @@ const ROLE_COLOURS = {
   employee: 'bg-green-100 text-green-700',
 };
 
-function roleBadges(empRoles = []) {
+function RoleBadges({ empRoles = [] }) {
   if (!empRoles.length) return <span className="text-xs text-gray-400">No role</span>;
-
   const sorted = [...empRoles].sort(
     (a, b) => (b.EmployeeRole?.is_primary ? 1 : 0) - (a.EmployeeRole?.is_primary ? 1 : 0)
   );
-
   return (
     <div className="flex flex-wrap gap-1">
       {sorted.map((r) => (
         <span
           key={r.id}
           title={r.EmployeeRole?.is_primary ? 'Primary role' : ''}
-          className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize flex items-center gap-0.5 ${
+          className={`text-xs px-2 py-0.5 rounded-full font-semibold capitalize flex items-center gap-0.5 ${
             ROLE_COLOURS[r.name] ?? 'bg-gray-100 text-gray-700'
           }`}
         >
-          {r.EmployeeRole?.is_primary && (
-            <span className="text-amber-500 text-xs">&#9733;</span>
-          )}
+          {r.EmployeeRole?.is_primary && <span className="text-amber-500">★</span>}
           {r.name}
         </span>
       ))}
@@ -55,6 +52,7 @@ export default function UserManagement() {
   } = useUsers();
 
   const [assignModal, setAssignModal] = useState(null);
+  const [viewUser, setViewUser]       = useState(null);
 
   async function handleAssignSuccess(employeeId, roleId) {
     await assignRole(employeeId, roleId);
@@ -74,18 +72,16 @@ export default function UserManagement() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, email or employee #..."
-          className="border rounded-lg px-3 py-2 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All Roles</option>
           {roles.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
+            <option key={r.id} value={r.id}>{r.name}</option>
           ))}
         </select>
         {(search || roleFilter) && (
@@ -96,22 +92,20 @@ export default function UserManagement() {
             Clear filters
           </button>
         )}
-        <span className="ml-auto text-sm text-gray-500">
-          {pagination.total} employee{pagination.total !== 1 ? 's' : ''}
-        </span>
+    
       </div>
 
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-      <div className="bg-white rounded-xl shadow overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
-              <th className="px-5 py-3 text-left font-semibold text-gray-600">Employee</th>
-              <th className="px-5 py-3 text-left font-semibold text-gray-600">Employee #</th>
-              <th className="px-5 py-3 text-left font-semibold text-gray-600">Department</th>
-              <th className="px-5 py-3 text-left font-semibold text-gray-600">Role</th>
-              <th className="px-5 py-3 text-right font-semibold text-gray-600">Actions</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Employee</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Employee #</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Department</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Role</th>
+              <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -119,7 +113,7 @@ export default function UserManagement() {
               <TableSkeleton rows={8} cols={5} />
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-gray-400">
+                <td colSpan={5} className="px-5 py-10 text-center text-gray-400 text-sm">
                   No employees found.
                 </td>
               </tr>
@@ -127,27 +121,42 @@ export default function UserManagement() {
               users.map((u) => (
                 <tr key={u.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-5 py-4">
-                    <div className="font-medium text-gray-800">
-                      {u.first_name} {u.last_name}
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                        {`${u.first_name?.[0] ?? ''}${u.last_name?.[0] ?? ''}`.toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-800">{u.first_name} {u.last_name}</div>
+                        <div className="text-xs text-gray-500">{u.email}</div>
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500">{u.email}</div>
                   </td>
-                  <td className="px-5 py-4 text-gray-600">{u.employee_number ?? '-'} </td>
+                  <td className="px-5 py-4 text-gray-600">{u.employee_number ?? '—'}</td>
                   <td className="px-5 py-4 text-gray-600">
-                    {u.department?.name ?? u.Department?.name ?? '-'}
+                    {u.department?.name ?? u.Department?.name ?? '—'}
                   </td>
-                  <td className="px-5 py-4">{roleBadges(u.roles || [])}</td>
+                  <td className="px-5 py-4">
+                    <RoleBadges empRoles={u.roles || []} />
+                  </td>
                   <td className="px-5 py-4 text-right">
-                    {can('user_edit') ? (
+                    <div className="flex items-center justify-end gap-4">
                       <button
-                        onClick={() => setAssignModal(u)}
-                        className="text-blue-600 hover:underline text-xs font-medium"
+                        onClick={() => setViewUser(u)}
+                        className="text-xs font-medium text-gray-500 hover:text-gray-800 hover:underline transition-colors"
                       >
-                        Assign Role
+                        View Details
                       </button>
-                    ) : (
-                      <span className="text-gray-400 text-xs">View only</span>
-                    )}
+                      {can('user_edit') ? (
+                        <button
+                          onClick={() => setAssignModal(u)}
+                          className="text-xs font-medium text-blue-600 hover:underline"
+                        >
+                          Assign Role
+                        </button>
+                      ) : (
+                        <span className="text-gray-400 text-xs">View only</span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -163,6 +172,13 @@ export default function UserManagement() {
           onChange={goToPage}
         />
       </div>
+
+      {viewUser && (
+        <UserDetailModal
+          user={viewUser}
+          onClose={() => setViewUser(null)}
+        />
+      )}
 
       {assignModal && (
         <AssignRoleModal

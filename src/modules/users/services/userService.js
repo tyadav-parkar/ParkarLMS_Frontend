@@ -1,11 +1,11 @@
 import api from '@shared/services/api';
-
+ 
 export const userService = {
   getUsers: async ({ page = 1, limit = 5, search = '', roleId = '' } = {}) => {
     const params = new URLSearchParams({ page, limit });
     if (search.trim()) params.append('search', search.trim());
     if (roleId) params.append('role_id', roleId);
-
+ 
     const { data } = await api.get(`/users?${params}`);
     return {
       users: data.data ?? [],
@@ -16,4 +16,14 @@ export const userService = {
       },
     };
   },
+ 
+  assignRole: async (employeeId, roleId) => {
+    const { data } = await api.post('/users/assign', {
+      employee_id: employeeId,
+      role_id: roleId,
+    });
+    return data;
+  },
 };
+ 
+ 
