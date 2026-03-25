@@ -1,54 +1,56 @@
-export default function Pagination({ page, totalPages, total, label = 'items', onChange }) {
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+export default function Pagination({ page, totalPages, onChange }) {
   if (totalPages <= 1) return null;
 
-  const allPages = Array.from({ length: totalPages }, (_, i) => i + 1);
-  const visiblePages = allPages.filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1);
+  // Build page array with ellipsis markers
+  const pages = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if (page > 3) pages.push('...');
+    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) {
+      pages.push(i);
+    }
+    if (page < totalPages - 2) pages.push('...');
+    pages.push(totalPages);
+  }
+
+  const navBtn = `flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold
+    transition-all text-gray-500
+    hover:bg-cyan-50 hover:text-cyan-800
+    border border-transparent hover:border-cyan-200
+    disabled:opacity-30 disabled:cursor-not-allowed
+    disabled:hover:bg-transparent disabled:hover:border-transparent`;
 
   return (
-    <div className="flex items-center justify-between px-5 py-3 border-t bg-gray-50 text-sm text-gray-600">
-      <span>
-        {total} {label}
-      </span>
+    <div className="flex justify-center items-center gap-0.5 px-5 py-4 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-white">
 
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => onChange(page - 1)}
-          disabled={page <= 1}
-          className="px-3 py-1 rounded border hover:bg-white disabled:opacity-40"
-        >
-          ← Prev
-        </button>
+      <button onClick={() => onChange(page - 1)} disabled={page === 1} className={navBtn}>
+        <ChevronLeft className="w-3.5 h-3.5" /> Prev
+      </button>
 
-        {visiblePages.reduce((acc, p, i) => {
-          if (i > 0 && p - visiblePages[i - 1] > 1) {
-            acc.push(
-              <span key={`ellipsis-${p}`} className="px-2">
-                …
-              </span>
-            );
-          }
-          acc.push(
-            <button
+      {pages.map((p, i) =>
+        p === '...'
+          ? <span key={`e${i}`} className="px-2 text-xs text-gray-300 select-none">···</span>
+          : <button
               key={p}
               onClick={() => onChange(p)}
-              className={`px-3 py-1 rounded border ${
-                p === page ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-white'
+              className={`min-w-[32px] h-8 rounded-lg text-xs font-semibold transition-all ${
+                p === page
+                  ? 'bg-gradient-to-br from-cyan-700 to-cyan-800 text-white shadow-sm shadow-cyan-900/20'
+                  : 'text-gray-500 hover:bg-cyan-50 hover:text-cyan-800'
               }`}
             >
               {p}
             </button>
-          );
-          return acc;
-        }, [])}
+      )}
 
-        <button
-          onClick={() => onChange(page + 1)}
-          disabled={page >= totalPages}
-          className="px-3 py-1 rounded border hover:bg-white disabled:opacity-40"
-        >
-          Next →
-        </button>
-      </div>
+      <button onClick={() => onChange(page + 1)} disabled={page === totalPages} className={navBtn}>
+        Next <ChevronRight className="w-3.5 h-3.5" />
+      </button>
+
     </div>
   );
 }

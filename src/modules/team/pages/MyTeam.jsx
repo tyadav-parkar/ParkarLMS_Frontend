@@ -1,13 +1,10 @@
-/**
- * TeamPage.jsx
- * src/modules/team/pages/TeamPage.jsx
- */
 
 import { useState, useEffect } from 'react';
 import { Pagination, TableSkeleton } from '@shared';
 import { useTeam } from '../hooks/useTeam';
 import MemberDetailModal from '../components/MemberDetailModal';
 import { getTeamJobTitles } from '../services/teamService';
+import { IdCard } from 'lucide-react';
 
 function Avatar({ firstName, lastName }) {
   const initials = `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase();
@@ -96,8 +93,8 @@ export default function TeamPage() {
               <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Employee</th>
               <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Department</th>
               <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Job Title</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Band</th>
-              <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Band/Level</th>
+              <th className="px-5 py-3 text-middle text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
             </tr>
           </thead>
 
@@ -141,13 +138,15 @@ export default function TeamPage() {
                     {member.band_identifier ?? '—'}
                   </span>
                 </td>
-                <td className="px-5 py-4 text-right">
+                <td className="px-5 py-4 text-center">
                   <button
-                    onClick={() => setViewMember(member)}
-                    className="text-xs font-medium text-blue-600 hover:underline"
-                  >
-                    View Details
-                  </button>
+      onClick={() => setViewMember(member)}
+      title="View Details"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-800 rounded-lg transition-colors text-xs font-semibold"
+    >
+      <IdCard className="w-3.5 h-3.5" />
+      Details
+    </button>
                 </td>
               </tr>
             ))}

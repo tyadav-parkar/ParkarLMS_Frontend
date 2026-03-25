@@ -3,7 +3,7 @@ import { useAuth } from '@auth';
 import { useRoles } from '../hooks/useRoles';
 import { Modal, Pagination, TableSkeleton } from '@shared';
 import RoleForm from '../components/RoleForm';
-import DeleteRoleForm from '../components/DeleteRoleForm';
+import { ShieldCheck } from 'lucide-react';
 
 const BADGE_COLOURS = [
   'bg-blue-100 text-blue-700',
@@ -17,6 +17,7 @@ const BADGE_COLOURS = [
 
 export default function RolesManagement() {
   const { can } = useAuth();
+
   const {
     roles,
     permissions,
@@ -31,11 +32,18 @@ export default function RolesManagement() {
     goToPage,
   } = useRoles();
 
-  const [editModal, setEditModal]     = useState(null);
+  const [editModal, setEditModal] = useState(null);
   const [createModal, setCreateModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(null);
-  const [form, setForm]               = useState({ name: '', description: '', selectedPermIds: [] });
-  const [reassignTo, setReassignTo]   = useState('');
+  const [confirmText, setConfirmText] = useState('');
+
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    selectedPermIds: [],
+  });
+
+  // ─────────── HANDLERS ───────────
 
   function openCreate() {
     setForm({ name: '', description: '', selectedPermIds: [] });
@@ -45,8 +53,8 @@ export default function RolesManagement() {
 
   function openEdit(role) {
     setForm({
-      name:            role.name,
-      description:     role.description ?? '',
+      name: role.name,
+      description: role.description ?? '',
       selectedPermIds: (role.permissions ?? []).map((p) => p.id),
     });
     setFormError('');
@@ -54,8 +62,8 @@ export default function RolesManagement() {
   }
 
   function openDelete(role) {
-    setReassignTo('');
     setFormError('');
+    setConfirmText('');
     setDeleteModal(role);
   }
 
@@ -70,72 +78,129 @@ export default function RolesManagement() {
 
   async function handleCreate(e) {
     e.preventDefault();
-    if (!form.name.trim()) { setFormError('Role name is required.'); return; }
+    if (!form.name.trim()) {
+      setFormError('Role name is required.');
+      return;
+    }
+
     const ok = await create({
-      name:        form.name.trim(),
+      name: form.name.trim(),
       description: form.description.trim(),
       permissions: form.selectedPermIds,
     });
+
     if (ok) setCreateModal(false);
   }
 
   async function handleUpdate(e) {
     e.preventDefault();
+
     const ok = await update(editModal.id, {
-      name:        form.name.trim(),
+      name: form.name.trim(),
       description: form.description.trim(),
       permissions: form.selectedPermIds,
     });
+
     if (ok) setEditModal(null);
   }
 
-  async function handleDelete(e) {
-    e.preventDefault();
-    if (!reassignTo) { setFormError('Please select a role to reassign employees to.'); return; }
-    const ok = await remove(deleteModal.id, Number(reassignTo));
-    if (ok) setDeleteModal(null);
+  async function handleDelete() {
+    if (confirmText !== 'DELETE') return;
+
+    const ok = await remove(deleteModal.id);
+
+    if (ok) {
+      setDeleteModal(null);
+      setConfirmText('');
+    }
   }
 
+  // ─────────── UI ───────────
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Roles &amp; Permissions</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage what each role can access across the LMS.</p>
+    <div className="space-y-6">
+
+      {/* ── CYAN HEADER (MATCHES USER MANAGEMENT) ── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-700 to-cyan-800 px-7 py-6 shadow-lg shadow-cyan-900/20">
+        <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full border border-cyan-700/30 pointer-events-none" />
+        <div className="absolute -right-2 -top-2 w-24 h-24 rounded-full border border-cyan-600/20 pointer-events-none" />
+        <div className="absolute right-16 -bottom-10 w-32 h-32 rounded-full border border-cyan-700/20 pointer-events-none" />
+
+        <div className="relative flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-8 h-8 rounded-lg bg-cyan-700/40 flex items-center justify-center">
+                <ShieldCheck className="w-4 h-4 text-cyan-300" />
+              </div>
+              <h1 className="text-xl font-bold text-white tracking-tight">
+                Roles & Permissions
+              </h1>
+            </div>
+            <p className="text-cyan-300/70 text-sm ml-11">
+              Manage what each role can access across the LMS.
+            </p>
+          </div>
+
+          <div className="hidden sm:flex flex-col items-end gap-0.5">
+            <span className="text-3xl font-bold text-white tabular-nums leading-none">
+              {pagination.total}
+            </span>
+            <span className="text-xs text-cyan-400 font-medium uppercase tracking-widest">
+              Roles
+            </span>
+          </div>
         </div>
+      </div>
+
+      {/* ── ACTION BUTTON ── */}
+      <div className="flex justify-end">
         {can('role_edit') && (
           <button
             onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-cyan-700 hover:bg-cyan-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
           >
             + New Role
           </button>
         )}
       </div>
 
+      {/* ── TABLE ── */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-100">
-            <tr>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Role</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Permissions</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Users</th>
-              <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
+          <thead>
+            <tr className="bg-gradient-to-r from-cyan-700 to-cyan-800">
+              <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-cyan-200 uppercase tracking-widest">
+                Role
+              </th>
+              <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-cyan-200 uppercase tracking-widest">
+                Permissions
+              </th>
+              <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-cyan-200 uppercase tracking-widest">
+                Users
+              </th>
+              <th className="px-5 py-3.5 text-right text-[11px] font-semibold text-cyan-200 uppercase tracking-widest">
+                Actions
+              </th>
             </tr>
           </thead>
+
           <tbody className="divide-y divide-gray-100">
             {loading ? (
               <TableSkeleton rows={6} cols={4} />
             ) : roles.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-5 py-8 text-center text-gray-400">No roles found.</td>
+                <td colSpan={4} className="px-5 py-10 text-center text-gray-400">
+                  No roles found.
+                </td>
               </tr>
             ) : (
               roles.map((role) => (
-                <tr key={role.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={role.id} className="hover:bg-cyan-50/30 transition-colors">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-800 capitalize">{role.name}</span>
+                      <span className="font-semibold text-gray-800 capitalize">
+                        {role.name}
+                      </span>
                       {role.is_system_role && (
                         <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-semibold uppercase tracking-wide">
                           system
@@ -143,15 +208,20 @@ export default function RolesManagement() {
                       )}
                     </div>
                     {role.description && (
-                      <p className="text-xs text-gray-400 mt-0.5">{role.description}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {role.description}
+                      </p>
                     )}
                   </td>
+
                   <td className="px-5 py-4">
                     <div className="flex flex-wrap gap-1.5">
                       {(role.permissions ?? []).length === 0 ? (
-                        <span className="text-gray-400 text-xs italic">No permissions</span>
+                        <span className="text-gray-400 text-xs italic">
+                          No permissions
+                        </span>
                       ) : (
-                        (role.permissions ?? []).map((p, i) => (
+                        role.permissions.map((p, i) => (
                           <span
                             key={p.id}
                             className={`text-xs px-2 py-0.5 rounded-full font-medium ${BADGE_COLOURS[i % BADGE_COLOURS.length]}`}
@@ -162,13 +232,17 @@ export default function RolesManagement() {
                       )}
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-gray-600">{role.employee_count ?? '—'}</td>
+
+                  <td className="px-5 py-4 text-gray-600">
+                    {role.employee_count ?? '—'}
+                  </td>
+
                   <td className="px-5 py-4 text-right">
                     {can('role_edit') && !role.is_system_role ? (
-                      <div className="flex items-center justify-end gap-3">
+                      <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => openEdit(role)}
-                          className="text-blue-600 hover:underline text-xs font-semibold"
+                          className="text-cyan-700 hover:underline text-xs font-semibold"
                         >
                           Edit
                         </button>
@@ -198,6 +272,7 @@ export default function RolesManagement() {
         />
       </div>
 
+      {/* ── CREATE MODAL ── */}
       {createModal && (
         <Modal title="Create New Role" onClose={() => setCreateModal(false)}>
           <RoleForm
@@ -214,6 +289,7 @@ export default function RolesManagement() {
         </Modal>
       )}
 
+      {/* ── EDIT MODAL ── */}
       {editModal && (
         <Modal title={`Edit Role — ${editModal.name}`} onClose={() => setEditModal(null)}>
           <RoleForm
@@ -230,18 +306,42 @@ export default function RolesManagement() {
         </Modal>
       )}
 
+      {/* ── DELETE MODAL ── */}
       {deleteModal && (
         <Modal title="Delete Role" onClose={() => setDeleteModal(null)}>
-          <DeleteRoleForm
-            roles={roles}
-            deletingRole={deleteModal}
-            reassignTo={reassignTo}
-            setReassignTo={setReassignTo}
-            formError={formError}
-            saving={saving}
-            onCancel={() => setDeleteModal(null)}
-            onSubmit={handleDelete}
-          />
+          <div className="p-4 text-sm text-gray-700">
+            <p>This will permanently delete the role and remove all employee assignments.</p>
+            <p className="mt-2 font-semibold text-red-600">This action cannot be undone.</p>
+
+            <div className="mt-4">
+              <label className="block text-xs font-semibold text-gray-500 mb-1">
+                Type <span className="text-red-600 font-bold">DELETE</span> to confirm
+              </label>
+              <input
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="DELETE"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t px-4 pb-4">
+            <button
+              onClick={() => setDeleteModal(null)}
+              className="px-4 py-2 text-sm rounded-lg border text-gray-600 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={handleDelete}
+              disabled={saving || confirmText !== 'DELETE'}
+              className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+            >
+              {saving ? 'Deleting...' : 'Delete Role'}
+            </button>
+          </div>
         </Modal>
       )}
     </div>

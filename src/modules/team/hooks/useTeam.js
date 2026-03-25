@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getMyTeam } from '../services/teamService';
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 30;
 
 export function useTeam() {
   const [members,        setMembers]        = useState([]);

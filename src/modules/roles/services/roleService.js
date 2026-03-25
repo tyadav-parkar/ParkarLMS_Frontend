@@ -37,10 +37,8 @@ export const roleService = {
     return data;
   },
  
-  delete: async (id, reassignToId) => {
-    const { data } = await api.delete(`/roles/${id}`, {
-      data: { reassign_to_id: reassignToId },
-    });
+  delete: async (id) => {
+    const { data } = await api.delete(`/roles/${id}`);
     return data;
   },
 };

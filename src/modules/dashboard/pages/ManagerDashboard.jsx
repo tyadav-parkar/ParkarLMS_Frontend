@@ -96,7 +96,7 @@ export default function ManagerDashboard() {
     <div className="space-y-6">
 
       {/* ── Hero banner ──────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-md p-6 text-white">
+      <div className="bg-gradient-to-r from-cyan-700 to-cyan-800 rounded-xl shadow-md p-6 text-white">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold leading-snug">
@@ -126,7 +126,7 @@ export default function ManagerDashboard() {
           <h2 className="text-base font-bold text-gray-800">Team Overview</h2>
           <p className="text-xs text-gray-500 mt-0.5">Key metrics and team performance</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+        <button className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white text-sm font-medium rounded-lg hover:bg-cyan-700 transition-colors shadow-sm">
           <Download className="w-4 h-4" />
           Generate Report
         </button>
@@ -161,7 +161,7 @@ export default function ManagerDashboard() {
         </ul>
       </div>
       {/* ── Team Performance banner ──────────────────────────────────────── */}
-<div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-md p-6 text-white">
+<div className="bg-gradient-to-r from-cyan-700 to-cyan-800 rounded-xl shadow-md p-6 text-white">
   <h2 className="text-lg font-bold">Team Performance</h2>
   <p className="text-blue-100 text-sm mt-1">
     Your team has completed 148 certifications this quarter.

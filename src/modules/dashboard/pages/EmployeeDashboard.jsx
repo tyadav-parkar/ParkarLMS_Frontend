@@ -102,7 +102,7 @@ export default function EmployeeDashboard() {
     <div className="space-y-6">
 
       {/* ── Hero banner ──────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-md p-6 text-white">
+      <div className="bg-gradient-to-r from-cyan-700 to-cyan-800 rounded-xl shadow-md p-6 text-white">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold leading-snug">
@@ -177,7 +177,7 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* ── Bottom CTA banner ────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-xl shadow-md p-6 text-white flex items-center justify-between gap-6">
+      <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 rounded-xl shadow-md p-6 text-white flex items-center justify-between gap-6">
         <div>
           <h2 className="text-lg font-bold">Great Progress!</h2>
           <p className="text-green-100 text-sm mt-1">

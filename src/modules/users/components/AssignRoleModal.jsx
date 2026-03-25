@@ -2,19 +2,21 @@ import { useState } from 'react';
 import { Modal } from '@shared';
 
 export default function AssignRoleModal({ employee, roles, onClose, onSuccess }) {
-  const primaryRole = employee.roles?.find((r) => r.EmployeeRole?.is_primary) ?? employee.roles?.[0];
-  const [selectedRoleId, setSelectedRoleId] = useState(primaryRole?.id ?? '');
+  const [selectedRoleId, setSelectedRoleId] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   async function handleSubmit(e) {
     e.preventDefault();
+
     if (!selectedRoleId) {
       setError('Please select a role.');
       return;
     }
+
     setSaving(true);
     setError('');
+
     try {
       await onSuccess(employee.id, Number(selectedRoleId));
     } catch (err) {
@@ -34,29 +36,28 @@ export default function AssignRoleModal({ employee, roles, onClose, onSuccess })
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">New Role</label>
-          <select
-            value={selectedRoleId}
-            onChange={(e) => setSelectedRoleId(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">- select a role -</option>
-            {roles.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        </div>
+
+        <select
+          value={selectedRoleId}
+          onChange={(e) => setSelectedRoleId(e.target.value)}
+          className="w-full border rounded-lg px-3 py-2 text-sm
+                     focus:outline-none focus:ring-2 focus:ring-cyan-700"
+        >
+          <option value="">- Select Role -</option>
+          {roles.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name.replace(/\b\w/g, l => l.toUpperCase())}
+            </option>
+          ))}
+        </select>
 
         <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
-          Note: the new role takes effect on the employee&apos;s next login.
+          Note: role applies on next login.
         </p>
 
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        <div className="flex justify-end gap-3 pt-1">
+        <div className="flex justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
@@ -64,10 +65,13 @@ export default function AssignRoleModal({ employee, roles, onClose, onSuccess })
           >
             Cancel
           </button>
+
           <button
             type="submit"
             disabled={saving}
-            className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+            className="px-4 py-2 text-sm rounded-lg
+                       bg-gradient-to-r from-[#0f2236] to-cyan-800
+                       hover:to-cyan-700 text-white"
           >
             {saving ? 'Saving...' : 'Assign Role'}
           </button>

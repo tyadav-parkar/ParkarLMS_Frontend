@@ -76,11 +76,11 @@ export function useRoles() {
     }
   };
 
-  const remove = async (id, reassignToId) => {
+  const remove = async (id) => {
     setSaving(true);
     setFormError('');
     try {
-      await roleService.delete(id, reassignToId);
+      await roleService.delete(id);
       await load(pagination.page);
       refreshUser();
       return true;

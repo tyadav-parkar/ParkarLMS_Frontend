@@ -105,7 +105,7 @@ export default function AdminDashboard() {
     <div className="space-y-6">
 
       {/* ── Hero banner ──────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-md p-6 text-white">
+      <div className="bg-gradient-to-r from-cyan-700 to-cyan-800 rounded-xl shadow-md p-6 text-white">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold leading-snug">
@@ -166,7 +166,7 @@ export default function AdminDashboard() {
               <h2 className="text-base font-bold text-gray-800">Departments</h2>
               <p className="text-xs text-gray-400 mt-0.5">Headcount &amp; active courses</p>
             </div>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500 hover:bg-cyan-700 text-white text-xs font-medium rounded-lg transition-colors">
               <Download className="w-3.5 h-3.5" />
               Export
             </button>
