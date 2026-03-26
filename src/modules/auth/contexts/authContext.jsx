@@ -14,6 +14,7 @@ export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const clearSession = useCallback(() => {
+    // Change For Git Push
     setUser(null);
     setPermissions([]);
     setRoles([]);
