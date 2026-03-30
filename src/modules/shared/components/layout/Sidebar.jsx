@@ -134,6 +134,7 @@ export default function Sidebar({ isOpen = true, toggleSidebar, isMobile = false
           <>
             <NavItem to="/manager/dashboard"    icon="📊" label="Dashboard"          isOpen={isOpen} isMobile={isMobile} />
             <NavItem to="/employee/career-path" icon="🛤️" label="Career Path"        isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/manager/my-courses"   icon="📚" label="My Courses"          isOpen={isOpen} isMobile={isMobile} />
             <NavItem to="/manager/team"         icon="👥" label="My Team"            isOpen={isOpen} isMobile={isMobile} />
             {(can('course_view') || can('course_assign') || can('course_edit')) && (
               <NavItem to="/manager/courses"    icon="🎓" label="Course Management"  isOpen={isOpen} isMobile={isMobile} />

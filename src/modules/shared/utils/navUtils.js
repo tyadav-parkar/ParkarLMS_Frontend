@@ -11,6 +11,14 @@ export const PERMISSION_NAV_MAP = {
 const MANAGER_COURSE_PERMS = ['course_assign', 'course_view', 'course_edit'];
 
 export function getExtraNavItems({ permissions, systemRole }) {
+  // Prevent surfacing links that are guaranteed to be blocked by role-gated routes.
+  if (systemRole === 'employee') {
+    const hasCourseAccess = ['course_assign', 'course_view', 'course_edit'].some((perm) => permissions.includes(perm));
+    return hasCourseAccess
+      ? [{ to: '/employee/courses', icon: '📚', label: 'My Courses' }]
+      : [];
+  }
+
   const seen = new Set();
   const items = [];
 

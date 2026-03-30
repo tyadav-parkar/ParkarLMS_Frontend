@@ -1,130 +1,280 @@
-import { useState } from 'react';
-import {
-  Search, X, UserPlus, Plus, Pencil, Trash, Eye, Users
-} from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Plus, Search, Users } from 'lucide-react';
+import { Modal, Pagination } from '@shared';
+import { useAuth } from '@auth';
 
-const initialCourses = [
-  { id: 1, title: 'React Fundamentals', category: 'Technical', difficulty: 'Beginner', duration: 10, students: 45, status: 'active' },
-  { id: 2, title: 'Node.js Backend Development', category: 'Technical', difficulty: 'Intermediate', duration: 15, students: 32, status: 'active' },
-  { id: 3, title: 'AWS Cloud Practitioner', category: 'Certification', difficulty: 'Beginner', duration: 20, students: 28, status: 'active' },
-  { id: 4, title: 'Communication Skills', category: 'Soft Skills', difficulty: 'Beginner', duration: 8, students: 56, status: 'active' },
-  { id: 5, title: 'System Design', category: 'Technical', difficulty: 'Advanced', duration: 25, students: 18, status: 'draft' },
-  { id: 6, title: 'Docker & Kubernetes', category: 'Technical', difficulty: 'Intermediate', duration: 35, students: 15, status: 'active' },
-];
+import { useCourses } from '../hooks/useCourses';
+import CourseList from '../components/CourseList';
+import CourseForm from '../components/CourseForm';
+import AssignmentModal from '../components/AssignmentModal';
+import ArchiveCourseModal from '../components/ArchiveCourseModal';
+import CourseAssignmentsModal from '../components/CourseAssignmentsModal';
+import CancelAssignmentModal from '../components/CancelAssignmentModal';
 
-const ALL_EMPLOYEES = [
-  { id: 1, name: 'John Doe', role: 'GTE', dept: 'Engineering' },
-  { id: 2, name: 'Sarah Williams', role: 'SE1', dept: 'Engineering' },
-  { id: 3, name: 'Mike Johnson', role: 'SE2', dept: 'Backend' },
-  { id: 4, name: 'Jane Smith', role: 'SDE', dept: 'Frontend' },
-  { id: 5, name: 'Tom Brown', role: 'Intern', dept: 'DevOps' },
-  { id: 6, name: 'Alice Chen', role: 'GTE', dept: 'Data' },
-  { id: 7, name: 'Bob Kumar', role: 'SE1', dept: 'Engineering' },
-  { id: 8, name: 'Diana Lee', role: 'Manager', dept: 'Engineering' },
-];
-
-const ROLES = ['All Roles', 'GTE', 'SE1', 'SE2', 'SDE', 'Intern', 'Manager'];
-const DEPTS = ['All Departments', 'Engineering', 'Backend', 'Frontend', 'DevOps', 'Data'];
-
-const DIFFICULTY_STYLES = {
-  Beginner: 'bg-emerald-50 text-emerald-700',
-  Intermediate: 'bg-amber-50 text-amber-700',
-  Advanced: 'bg-red-50 text-red-700',
+const initialForm = {
+  title: '',
+  provider: '',
+  externalUrl: '',
+  category: '',
+  difficulty: 'Beginner',
+  estimatedDurationMonths: '',
+  description: '',
+  prerequisites: '',
 };
 
-function Avatar({ name }) {
-  const initials = name.split(' ').map((n) => n[0]).join('').toUpperCase();
-  return (
-    <div className="w-7 h-7 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
-      {initials}
-    </div>
-  );
-}
-
 export default function AdminCourses() {
-  const [courses, setCourses] = useState(initialCourses);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const { can, user } = useAuth();
+  const canEdit = can('course_edit');
+  const canAssign = can('course_assign');
+
+  const {
+    courses,
+    pagination,
+    loading,
+    error,
+    saving,
+    formError,
+    setFormError,
+    search,
+    setSearch,
+    categoryFilter,
+    setCategoryFilter,
+    difficultyFilter,
+    setDifficultyFilter,
+    statusFilter,
+    setStatusFilter,
+    create,
+    update,
+    archive,
+    bulkAssign,
+    cancelAssign,
+    getAssignments,
+    assignments,
+    assignmentsPagination,
+    assignmentsLoading,
+    assignmentError,
+    setAssignmentError,
+    getEligibleEmployees,
+    goToPage,
+  } = useCourses();
+
   const [createModal, setCreateModal] = useState(false);
-  const [assignModal, setAssignModal] = useState(null);
-  const [assignRole, setAssignRole] = useState('All Roles');
-  const [assignDept, setAssignDept] = useState('All Departments');
-  const [assignSelected, setAssignSelected] = useState([]);
-  const [assignSuccess, setAssignSuccess] = useState(false);
-  const [assignDeadline, setAssignDeadline] = useState('');
+  const [editCourse, setEditCourse] = useState(null);
+  const [assignCourse, setAssignCourse] = useState(null);
+  const [archiveCourse, setArchiveCourse] = useState(null);
+  const [assignmentsCourse, setAssignmentsCourse] = useState(null);
+  const [assignmentStatusFilter, setAssignmentStatusFilter] = useState('');
+  const [cancelAssignmentTarget, setCancelAssignmentTarget] = useState(null);
+  const [cancelingAssignmentId, setCancelingAssignmentId] = useState(null);
 
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    category: 'Technical',
-    difficulty: 'Beginner',
-    duration: ''
-  });
+  const [form, setForm] = useState(initialForm);
 
-  const categories = ['all', ...new Set(initialCourses.map((c) => c.category))];
+  const [eligibleEmployees, setEligibleEmployees] = useState([]);
+  const [eligibleLoading, setEligibleLoading] = useState(false);
+  const [assignError, setAssignError] = useState('');
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const filtered = courses.filter((c) => {
-    const matchSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchCat = categoryFilter === 'all' || c.category === categoryFilter;
-    return matchSearch && matchCat;
-  });
+  const categories = useMemo(() => {
+    const set = new Set(courses.map((c) => c.category).filter(Boolean));
+    return ['all', ...set];
+  }, [courses]);
 
-  function handleCreate(e) {
-    e.preventDefault();
-    const newCourse = {
-      id: courses.length + 1,
-      title: form.title,
-      category: form.category,
-      difficulty: form.difficulty,
-      duration: parseInt(form.duration) || 0,
-      students: 0,
-      status: 'active',
-    };
-    setCourses([newCourse, ...courses]);
-    setCreateModal(false);
-    setForm({ title: '', description: '', category: 'Technical', difficulty: 'Beginner', duration: '' });
+  const stats = useMemo(() => ({
+    total: pagination.total,
+    active: courses.filter((c) => c.status === 'active').length,
+    enrolled: courses.reduce((sum, c) => sum + (c.enrolledCount || 0), 0),
+  }), [courses, pagination.total]);
+
+  function resetFormState() {
+    setForm(initialForm);
+    setFormError('');
   }
 
-  function handleDelete(id) {
-    if (window.confirm('Delete this course?')) {
-      setCourses((prev) => prev.filter((c) => c.id !== id));
+  function openCreateModal() {
+    resetFormState();
+    setSuccessMessage('');
+    setCreateModal(true);
+  }
+
+  function openEditModal(course) {
+    setFormError('');
+    setSuccessMessage('');
+    setEditCourse(course);
+    setForm({
+      title: course.title || '',
+      provider: course.provider || '',
+      externalUrl: course.externalUrl || '',
+      category: course.category || '',
+      difficulty: course.difficulty || 'Beginner',
+      estimatedDurationMonths: course.estimatedDurationMonths ?? '',
+      description: course.description || '',
+      prerequisites: course.prerequisites || '',
+    });
+  }
+
+  async function handleCreateSubmit(e) {
+    e.preventDefault();
+    try {
+      await create({
+        ...form,
+        estimatedDurationMonths: form.estimatedDurationMonths === '' ? null : Number(form.estimatedDurationMonths),
+      });
+      setCreateModal(false);
+      resetFormState();
+      setSuccessMessage('Course created successfully.');
+    } catch {
+      // handled by hook formError
     }
   }
 
-  const filteredEmployees = ALL_EMPLOYEES.filter((e) => {
-    const matchRole = assignRole === 'All Roles' || e.role === assignRole;
-    const matchDept = assignDept === 'All Departments' || e.dept === assignDept;
-    return matchRole && matchDept;
-  });
+  async function handleEditSubmit(e) {
+    e.preventDefault();
+    if (!editCourse) return;
 
-  function toggleEmployee(id) {
-    setAssignSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    try {
+      await update(editCourse.id, {
+        ...form,
+        estimatedDurationMonths: form.estimatedDurationMonths === '' ? null : Number(form.estimatedDurationMonths),
+      });
+      setEditCourse(null);
+      resetFormState();
+      setSuccessMessage('Course updated successfully.');
+    } catch {
+      // handled by hook formError
+    }
   }
 
-  function handleAssign() {
-    setAssignSuccess(true);
-    setTimeout(() => {
-      setAssignSuccess(false);
-      setAssignModal(null);
-      setAssignSelected([]);
-      setAssignRole('All Roles');
-      setAssignDept('All Departments');
-      setAssignDeadline('');
-    }, 1200);
+  async function handleArchive(course) {
+    setArchiveCourse(course);
   }
 
-  const stats = {
-    total: courses.length,
-    active: courses.filter((c) => c.status === 'active').length,
-    enrolled: courses.reduce((s, c) => s + c.students, 0),
-  };
+  async function confirmArchive() {
+    if (!archiveCourse) return;
+    try {
+      await archive(archiveCourse.id);
+      setArchiveCourse(null);
+      setSuccessMessage('Course archived successfully.');
+    } catch {
+      // handled by hook formError
+    }
+  }
+
+  async function openAssignmentsModal(course) {
+    setAssignmentsCourse(course);
+    setAssignmentStatusFilter('');
+    setAssignmentError('');
+    setSuccessMessage('');
+    try {
+      await getAssignments(course.id, { page: 1, limit: 10 });
+    } catch {
+      // handled by hook assignmentError
+    }
+  }
+
+  async function onAssignmentsPageChange(nextPage) {
+    if (!assignmentsCourse) return;
+    try {
+      await getAssignments(assignmentsCourse.id, { page: nextPage, limit: 10, status: assignmentStatusFilter || undefined });
+    } catch {
+      // handled by hook assignmentError
+    }
+  }
+
+  async function onAssignmentsStatusFilterChange(nextStatus) {
+    if (!assignmentsCourse) return;
+    setAssignmentStatusFilter(nextStatus);
+    try {
+      await getAssignments(assignmentsCourse.id, { page: 1, limit: 10, status: nextStatus || undefined });
+    } catch {
+      // handled by hook assignmentError
+    }
+  }
+
+  function askCancelAssignment(assignment) {
+    setCancelAssignmentTarget(assignment);
+  }
+
+  async function confirmCancelAssignment(assignmentId) {
+    if (!assignmentsCourse) return;
+    setCancelingAssignmentId(assignmentId);
+    setAssignmentError('');
+    try {
+      await cancelAssign(assignmentsCourse.id, assignmentId);
+      await getAssignments(assignmentsCourse.id, {
+        page: assignmentsPagination.page,
+        limit: assignmentsPagination.limit,
+        status: assignmentStatusFilter || undefined,
+      });
+      setCancelAssignmentTarget(null);
+      setSuccessMessage('Assignment cancelled successfully.');
+    } catch (err) {
+      setAssignmentError(err.response?.data?.message ?? 'Failed to cancel assignment.');
+    } finally {
+      setCancelingAssignmentId(null);
+    }
+  }
+
+  async function loadEligible(filters = {}, courseId = null) {
+    const targetCourseId = courseId ?? assignCourse?.id;
+    if (!targetCourseId) return;
+    setEligibleLoading(true);
+    setAssignError('');
+    try {
+      const result = await getEligibleEmployees({
+        page: 1,
+        limit: 50,
+        courseId: targetCourseId,
+        ...filters,
+      });
+      const sanitized = (result.data || []).filter((employee) => {
+        const isSelf = Number(employee.id) === Number(user?.id);
+        const isAdmin = (employee.roles || []).some(
+          (role) => String(role.name || '').toLowerCase() === 'admin'
+        );
+        return !isSelf && !isAdmin;
+      });
+      setEligibleEmployees(sanitized);
+    } catch (err) {
+      setAssignError(err.response?.data?.message ?? 'Failed to load eligible employees.');
+    } finally {
+      setEligibleLoading(false);
+    }
+  }
+
+  function openAssignModal(course) {
+    setAssignCourse(course);
+    setSelectedEmployeeIds([]);
+    setEligibleEmployees([]);
+    setAssignError('');
+    setSuccessMessage('');
+    loadEligible({}, course.id);
+  }
+
+  function toggleEmployee(employeeId) {
+    setSelectedEmployeeIds((prev) => (
+      prev.includes(employeeId)
+        ? prev.filter((id) => id !== employeeId)
+        : [...prev, employeeId]
+    ));
+  }
+
+  async function handleAssign(payload) {
+    if (!assignCourse) return;
+    setAssignError('');
+    try {
+      await bulkAssign(assignCourse.id, payload);
+      setAssignCourse(null);
+      setSelectedEmployeeIds([]);
+      setEligibleEmployees([]);
+      setSuccessMessage('Course assigned successfully.');
+    } catch (err) {
+      setAssignError(err.response?.data?.message ?? 'Failed to assign course.');
+    }
+  }
 
   return (
     <div className="space-y-6">
-
-      {/* 🔷 HEADER */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-700 to-cyan-800 px-7 py-6 shadow-lg shadow-cyan-900/20">
         <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full border border-cyan-700/30" />
         <div className="absolute -right-2 -top-2 w-24 h-24 rounded-full border border-cyan-600/20" />
@@ -134,9 +284,7 @@ export default function AdminCourses() {
             <div className="w-8 h-8 rounded-lg bg-cyan-700/40 flex items-center justify-center">
               <Users className="w-4 h-4 text-cyan-300" />
             </div>
-            <h1 className="text-xl font-bold text-white">
-              Course Management
-            </h1>
+            <h1 className="text-xl font-bold text-white">Course Management</h1>
           </div>
           <p className="text-cyan-300/70 text-sm ml-11">
             Create, manage and assign courses across the organisation
@@ -144,27 +292,36 @@ export default function AdminCourses() {
         </div>
       </div>
 
-      {/* 🔷 ACTION BAR */}
       <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-500">
-          Manage all courses in the system
-        </span>
+        <span className="text-sm text-gray-500">Manage all courses in the system</span>
 
         <button
-          onClick={() => setCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-cyan-700 hover:bg-cyan-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
+          onClick={openCreateModal}
+          disabled={!canEdit}
+          className="flex items-center gap-2 px-4 py-2 bg-cyan-700 hover:bg-cyan-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="w-4 h-4" />
           Create Course
         </button>
       </div>
 
-      {/* 🔷 STATS */}
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">
+          {error}
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 px-4 py-3 text-sm">
+          {successMessage}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: 'Total Courses', value: stats.total },
-          { label: 'Active Courses', value: stats.active },
-          { label: 'Total Enrollments', value: stats.enrolled },
+          { label: 'Active (current page)', value: stats.active },
+          { label: 'Total Enrollments (current page)', value: stats.enrolled },
         ].map(({ label, value }) => (
           <div key={label} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
@@ -173,113 +330,156 @@ export default function AdminCourses() {
         ))}
       </div>
 
-      {/* 🔷 TABLE */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-base font-bold text-gray-800">All Courses</h2>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search..."
+                aria-label="Search courses"
                 className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-700"
               />
             </div>
 
             <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
+              value={categoryFilter || 'all'}
+              onChange={(e) => setCategoryFilter(e.target.value === 'all' ? '' : e.target.value)}
+              aria-label="Filter by category"
               className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-700"
             >
               {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c === 'all' ? 'All Categories' : c}
-                </option>
+                <option key={c} value={c}>{c === 'all' ? 'All Categories' : c}</option>
               ))}
+            </select>
+
+            <select
+              value={difficultyFilter || 'all'}
+              onChange={(e) => setDifficultyFilter(e.target.value === 'all' ? '' : e.target.value)}
+              aria-label="Filter by difficulty"
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-700"
+            >
+              <option value="all">All Difficulty</option>
+              <option value="Beginner">Beginner</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Advanced">Advanced</option>
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              aria-label="Filter by status"
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-700"
+            >
+              <option value="active">Active</option>
+              <option value="archived">Archived</option>
             </select>
           </div>
         </div>
 
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-100">
-            <tr>
-              {['Course Title', 'Category', 'Difficulty', 'Duration', 'Enrolled', 'Status', 'Actions'].map((h) => (
-                <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>
-              ))}
-            </tr>
-          </thead>
+        <CourseList
+          courses={courses}
+          loading={loading}
+          onAssign={openAssignModal}
+          onEdit={openEditModal}
+          onArchive={handleArchive}
+          onViewAssignments={openAssignmentsModal}
+          canEdit={canEdit}
+          canAssign={canAssign}
+        />
 
-          <tbody className="divide-y divide-gray-100">
-            {filtered.map((course) => (
-              <tr key={course.id} className="hover:bg-cyan-50/40">
-                <td className="px-5 py-3 font-semibold text-gray-800">{course.title}</td>
-
-                <td className="px-5 py-3">
-                  <span className="px-2.5 py-0.5 text-xs bg-cyan-50 text-cyan-700 rounded-full">
-                    {course.category}
-                  </span>
-                </td>
-
-                <td className="px-5 py-3">
-                  <span className={`px-2.5 py-0.5 text-xs rounded-full ${DIFFICULTY_STYLES[course.difficulty]}`}>
-                    {course.difficulty}
-                  </span>
-                </td>
-
-                <td className="px-5 py-3">{course.duration}h</td>
-                <td className="px-5 py-3">{course.students}</td>
-
-                <td className="px-5 py-3">
-                  <span className={`px-2.5 py-0.5 text-xs rounded-full ${
-                    course.status === 'active'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    {course.status === 'active' ? 'Active' : 'Draft'}
-                  </span>
-                </td>
-
-                <td className="px-5 py-3">
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => { setAssignModal(course); setAssignSelected([]); }}
-                      className="p-1.5 text-cyan-700 hover:bg-cyan-50 rounded-lg"
-                    >
-                      <UserPlus className="w-4 h-4" />
-                    </button>
-
-                    <button className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg">
-                      <Eye className="w-4 h-4" />
-                    </button>
-
-                    <button className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg">
-                      <Pencil className="w-4 h-4" />
-                    </button>
-
-                    <button
-                      onClick={() => handleDelete(course.id)}
-                      className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
-                    >
-                      <Trash className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={7} className="text-center py-10 text-gray-400">
-                  No courses found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <Pagination
+          page={pagination.page}
+          totalPages={Math.max(1, pagination.totalPages)}
+          onChange={goToPage}
+        />
       </div>
+
+      {createModal && (
+        <Modal title="Create Course" onClose={() => setCreateModal(false)}>
+          <CourseForm
+            form={form}
+            setForm={setForm}
+            formError={formError}
+            saving={saving}
+            onSubmit={handleCreateSubmit}
+            onCancel={() => setCreateModal(false)}
+          />
+        </Modal>
+      )}
+
+      {editCourse && (
+        <Modal title={`Edit Course - ${editCourse.title}`} onClose={() => setEditCourse(null)}>
+          <CourseForm
+            form={form}
+            setForm={setForm}
+            formError={formError}
+            saving={saving}
+            onSubmit={handleEditSubmit}
+            onCancel={() => setEditCourse(null)}
+            isEdit
+          />
+        </Modal>
+      )}
+
+      {assignCourse && (
+        <AssignmentModal
+          course={assignCourse}
+          onClose={() => setAssignCourse(null)}
+          onSubmit={handleAssign}
+          loading={eligibleLoading}
+          error={assignError || formError}
+          employees={eligibleEmployees}
+          selectedIds={selectedEmployeeIds}
+          onToggleEmployee={toggleEmployee}
+          onFilterChange={loadEligible}
+          saving={saving}
+        />
+      )}
+
+      {archiveCourse && (
+        <ArchiveCourseModal
+          course={archiveCourse}
+          onCancel={() => setArchiveCourse(null)}
+          onConfirm={confirmArchive}
+          loading={saving}
+          error={formError}
+        />
+      )}
+
+      {assignmentsCourse && (
+        <CourseAssignmentsModal
+          course={assignmentsCourse}
+          loading={assignmentsLoading}
+          error={assignmentError}
+          assignments={assignments}
+          pagination={assignmentsPagination}
+          statusFilter={assignmentStatusFilter}
+          onStatusFilterChange={onAssignmentsStatusFilterChange}
+          onPageChange={onAssignmentsPageChange}
+          onCancel={askCancelAssignment}
+          cancelingAssignmentId={cancelingAssignmentId}
+          onClose={() => {
+            setAssignmentsCourse(null);
+            setCancelAssignmentTarget(null);
+            setAssignmentError('');
+          }}
+        />
+      )}
+
+      {cancelAssignmentTarget && (
+        <CancelAssignmentModal
+          assignment={cancelAssignmentTarget}
+          onCancel={() => setCancelAssignmentTarget(null)}
+          onConfirm={confirmCancelAssignment}
+          loading={Boolean(cancelingAssignmentId)}
+          error={assignmentError}
+        />
+      )}
     </div>
   );
 }

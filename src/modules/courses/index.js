@@ -1,3 +1,14 @@
 export { default as  EmployeeCourses} from './pages/EmployeeCourses';
+export { default as ManagerMyCourses } from './pages/ManagerMyCourses';
 export { default as ManagerCourses } from './pages/ManagerCourses';
 export { default as AdminCourses } from './pages/AdminCourses';
+export { courseService } from './services/courseService';
+export { useCourses } from './hooks/useCourses';
+export { default as CourseForm } from './components/CourseForm';
+export { default as CourseList } from './components/CourseList';
+export { default as AssignmentModal } from './components/AssignmentModal';
+export { default as EligibleEmployeesPicker } from './components/EligibleEmployeesPicker';
+export { default as ArchiveCourseModal } from './components/ArchiveCourseModal';
+export { default as CourseAssignmentsModal } from './components/CourseAssignmentsModal';
+export { default as CourseAssignmentsTable } from './components/CourseAssignmentsTable';
+export { default as CancelAssignmentModal } from './components/CancelAssignmentModal';

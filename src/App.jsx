@@ -14,6 +14,7 @@ import EmployeeCertificates from '../src/modules/certificates/pages/EmployeeCert
 import ManagerCertificates  from '../src/modules/certificates/pages/ManagerCertificates';
 import  EmployeeCourses  from '../src/modules/courses/pages/EmployeeCourses';
 import ManagerCourses  from '../src/modules/courses/pages/ManagerCourses';
+import ManagerMyCourses from '../src/modules/courses/pages/ManagerMyCourses';
 import  AdminCourses from '../src/modules/courses/pages/AdminCourses';
 import EmployeeCareerPath from '../src/modules/carrerPath/pages/EmployeeCareerPath';
 import ManagerCareerPath from '../src/modules/carrerPath/pages/ManagerCareerPath';
@@ -70,6 +71,7 @@ function AppRoutes() {
             }
           />
           <Route path="/manager/certificates" element={<ProtectedRoute allowedRoles={['manager']}><ManagerCertificates /></ProtectedRoute>} />
+          <Route path="/manager/my-courses" element={<ProtectedRoute allowedRoles={['manager']}><ManagerMyCourses /></ProtectedRoute>} />
           <Route path="/manager/courses" element={<ProtectedRoute allowedRoles={['manager']}><ManagerCourses /></ProtectedRoute>} />
           <Route path="/manager/career-path" element={<ProtectedRoute allowedRoles={['manager']}><ManagerCareerPath /></ProtectedRoute>} /> 
 

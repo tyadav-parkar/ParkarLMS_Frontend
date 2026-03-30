@@ -1,16 +1,24 @@
 import { useState } from 'react';
 import { Modal } from '@shared';
+import { useAuth } from '@auth';
 
 export default function AssignRoleModal({ employee, roles, onClose, onSuccess }) {
+  const { user } = useAuth();
   const [selectedRoleId, setSelectedRoleId] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const isSelf = Number(employee?.id) === Number(user?.id);
 
   async function handleSubmit(e) {
     e.preventDefault();
 
     if (!selectedRoleId) {
       setError('Please select a role.');
+      return;
+    }
+
+    if (isSelf) {
+      setError('You cannot change your own role.');
       return;
     }
 
@@ -55,6 +63,12 @@ export default function AssignRoleModal({ employee, roles, onClose, onSuccess })
           Note: role applies on next login.
         </p>
 
+        {isSelf && (
+          <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">
+            You cannot assign a role to your own account.
+          </p>
+        )}
+
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
         <div className="flex justify-end gap-3">
@@ -68,10 +82,10 @@ export default function AssignRoleModal({ employee, roles, onClose, onSuccess })
 
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || isSelf}
             className="px-4 py-2 text-sm rounded-lg
                        bg-gradient-to-r from-[#0f2236] to-cyan-800
-                       hover:to-cyan-700 text-white"
+                       hover:to-cyan-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving...' : 'Assign Role'}
           </button>

@@ -59,7 +59,7 @@ function Avatar({ firstName, lastName, inactive = false }) {
 }
 
 export default function UserManagement() {
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const {
     users, roles, pagination, loading, 
     search, roleFilter, activeFilter,
@@ -222,7 +222,7 @@ export default function UserManagement() {
                         Details
                       </button>
 
-                      {can("user_edit") && isActive && (
+                      {can("user_edit") && isActive && Number(u.id) !== Number(user?.id) && (
                         <button
                           onClick={() => setAssignModal(u)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-700 hover:bg-cyan-800 text-white rounded-lg text-xs font-semibold"
