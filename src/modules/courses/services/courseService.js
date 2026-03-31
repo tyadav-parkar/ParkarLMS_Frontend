@@ -2,14 +2,12 @@ import api from '@shared/services/api';
 
 function buildParams(paramsObj) {
   const params = new URLSearchParams();
-
   Object.entries(paramsObj).forEach(([key, value]) => {
     if (value === undefined || value === null) return;
     const str = String(value).trim();
     if (!str) return;
     params.append(key, str);
   });
-
   return params.toString();
 }
 
@@ -23,13 +21,12 @@ function toPagination(meta) {
 }
 
 export const courseService = {
-  async getCourses({ page = 1, limit = 10, search = '', category = '', difficulty = '', status = 'active' } = {}) {
+  async getCourses({
+    page = 1, limit = 10, search = '', category = '', difficulty = '', status = 'active',
+  } = {}) {
     const query = buildParams({ page, limit, search, category, difficulty, status });
     const { data } = await api.get(`/courses?${query}`);
-    return {
-      data: data.data ?? [],
-      pagination: toPagination(data.meta),
-    };
+    return { data: data.data ?? [], pagination: toPagination(data.meta) };
   },
 
   async createCourse(payload) {
@@ -50,28 +47,21 @@ export const courseService = {
   async getCourseAssignments(courseId, { page = 1, limit = 10, status = '' } = {}) {
     const query = buildParams({ page, limit, status });
     const { data } = await api.get(`/courses/${courseId}/assignments?${query}`);
-    return {
-      data: data.data ?? [],
-      pagination: toPagination(data.meta),
-    };
+    return { data: data.data ?? [], pagination: toPagination(data.meta) };
   },
 
-  async getEmployeeAssignments({ page = 1, limit = 10, status = '', employeeId = '', search = '' } = {}) {
+  async getEmployeeAssignments({
+    page = 1, limit = 10, status = '', employeeId = '', search = '',
+  } = {}) {
     const query = buildParams({ page, limit, status, employeeId, search });
     const { data } = await api.get(`/courses/employee-assignments?${query}`);
-    return {
-      data: data.data ?? [],
-      pagination: toPagination(data.meta),
-    };
+    return { data: data.data ?? [], pagination: toPagination(data.meta) };
   },
 
   async getMyAssignments({ page = 1, limit = 10, status = '', search = '' } = {}) {
     const query = buildParams({ page, limit, status, search });
     const { data } = await api.get(`/courses/my-assignments?${query}`);
-    return {
-      data: data.data ?? [],
-      pagination: toPagination(data.meta),
-    };
+    return { data: data.data ?? [], pagination: toPagination(data.meta) };
   },
 
   async getMyAssignmentDetail(assignmentId) {
@@ -91,10 +81,7 @@ export const courseService = {
 
   async bulkAssignCourse(courseId, payload) {
     const { data } = await api.post(`/courses/${courseId}/assign`, payload);
-    return {
-      data: data.data ?? [],
-      meta: data.meta ?? {},
-    };
+    return { data: data.data ?? [], meta: data.meta ?? {} };
   },
 
   async cancelAssignment(courseId, assignmentId) {
@@ -102,12 +89,51 @@ export const courseService = {
     return data.data;
   },
 
-  async getEligibleEmployees({ page = 1, limit = 10, search = '', role = '', department = '', jobTitle = '' } = {}) {
-    const query = buildParams({ page, limit, search, role, department, jobTitle });
+  // Signature matches original exactly — all params are optional strings/numbers
+  async getEligibleEmployees({
+    page = 1,
+    limit = 50,
+    search = '',
+    role = '',
+    role_id,
+    department = '',
+    department_id,
+    jobTitle = '',
+  } = {}) {
+    const query = buildParams({
+      page,
+      limit,
+      search,
+      role,
+      role_id,
+      department,
+      department_id,
+      jobTitle,
+    });
     const { data } = await api.get(`/courses/eligible-employees?${query}`);
-    return {
-      data: data.data ?? [],
-      pagination: toPagination(data.meta),
-    };
+    return { data: data.data ?? [], pagination: toPagination(data.meta) };
   },
+
+  async getAllEligibleEmployeeIds({
+    search = '',
+    role = '',
+    role_id,
+    department = '',
+    department_id,
+    jobTitle = '',
+  } = {}) {
+    const query = buildParams({
+      search,
+      role,
+      role_id,
+      department,
+      department_id,
+      jobTitle,
+    });
+    const { data: responseData } = await api.get(`/courses/eligible-employees-ids?${query}`);
+    return responseData.data; // { eligibleEmployeeIds: [], totalCount: N }
+  },
+
+  // ── Reference data for admin dropdowns ────────────────────────────
 };
+
