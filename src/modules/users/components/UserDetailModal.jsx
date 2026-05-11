@@ -32,7 +32,7 @@ const ROLE_ICON_BG = {
 function Avatar({ firstName, lastName }) {
   const initials = `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase();
   return (
-    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-xl font-bold flex-shrink-0 shadow-md">
+    <div className="w-16 h-16 rounded-2xl border  text-white flex items-center justify-center text-xl font-bold shrink-0 shadow-md">
       {initials}
     </div>
   );
@@ -95,7 +95,7 @@ export default function UserDetailModal({ user, onClose, onAssignRole, canEdit }
       <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
 
         {/* ── Header band ──────────────────────────────────────────── */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 pt-6 pb-10 relative">
+        <div className="main-background px-6 pt-6 pb-10 relative">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"

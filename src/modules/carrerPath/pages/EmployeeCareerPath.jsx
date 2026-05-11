@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Award, BookOpen, CheckCircle, Lock, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
+import { useAuth } from '@auth';
 
 const EMPLOYEE_DATA = {
   currentRole: 'Senior Developer',
@@ -138,14 +139,14 @@ function StageNode({ stage, isLast, expanded, onToggle }) {
             )}
           </div>
 
-          {stage.milestones.length > 0 && (
+          {/* {stage.milestones.length > 0 && (
             <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${stage.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'}`}
                 style={{ width: `${getStageProgress(stage)}%` }}
               />
             </div>
-          )}
+          )} */}
         </div>
 
         {expanded && stage.milestones.length > 0 && (
@@ -155,7 +156,7 @@ function StageNode({ stage, isLast, expanded, onToggle }) {
                 <div className="flex flex-col items-center w-6 flex-shrink-0 pt-0.5">
                   <MilestoneIcon type={m.type} status={m.status} />
                   {mi < stage.milestones.length - 1 && (
-                    <div className={`w-px flex-1 min-h-[18px] mt-1 ${m.status === 'completed' ? 'bg-green-300' : 'bg-gray-200'}`} />
+                    <div className={`w-px flex-1 min-h-4.5 mt-1 ${m.status === 'completed' ? 'bg-green-300' : 'bg-gray-200'}`} />
                   )}
                 </div>
                 <div className={`flex-1 rounded-lg border px-3 py-2 mb-0.5 ${
@@ -182,7 +183,7 @@ function StageNode({ stage, isLast, expanded, onToggle }) {
                       <p className={`text-xs font-semibold ${m.status === 'not-started' ? 'text-gray-400' : 'text-gray-800'}`}>{m.title}</p>
                       {/* <p className="text-[10px] text-gray-400 mt-0.5">{m.detail}</p> */}
                     </div>
-                    <span className="text-[10px] text-gray-400 flex-shrink-0 mt-0.5 whitespace-nowrap">{m.date}</span>
+                    <span className="text-[10px] text-gray-400 shrink-0 mt-0.5 whitespace-nowrap">{m.date}</span>
                   </div>
                 </div>
               </div>
@@ -194,8 +195,11 @@ function StageNode({ stage, isLast, expanded, onToggle }) {
   );
 }
 
-export default function CareerPath({ role = 'employee' }) {
-  const data = role === 'manager' ? MANAGER_DATA : EMPLOYEE_DATA;
+export default function CareerPath() {
+  const { user } = useAuth();
+  
+  const data = user.role === 'manager' ? MANAGER_DATA : EMPLOYEE_DATA;
+
   const { currentRole, band, stages } = data;
 
   const visibleStages = stages.filter((s) => s.status !== 'upcoming');
@@ -218,13 +222,13 @@ export default function CareerPath({ role = 'employee' }) {
         <p className="text-sm text-gray-500 mt-1">Your learning journey and role progression</p>
       </div>
 
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-white">
+      <div className="bg-linear-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-white">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <p className="text-xs font-semibold text-blue-200 uppercase tracking-widest mb-1">Current Role</p>
             <h2 className="text-2xl font-bold">
               {currentRole}
-              <span className="ml-2 text-sm font-semibold bg-white/20 px-2.5 py-0.5 rounded-full">{band}</span>
+              <span className="ml-2 text-sm font-semibold bg-white/20 px-2.5 py-0.5 rounded-full">{user.job_title}</span>
             </h2>
             {nextStage && (
               <p className="text-sm text-blue-100 mt-2">
@@ -232,7 +236,7 @@ export default function CareerPath({ role = 'employee' }) {
               </p>
             )}
           </div>
-          <div className="text-right flex-shrink-0">
+          <div className="text-right shrink-0">
             {/* <p className="text-4xl font-extrabold leading-none">{stageProgress}%</p>
             <p className="text-blue-200 text-xs mt-1">current stage</p> */}
             {/* <div className="mt-3 w-32 h-2 bg-white/20 rounded-full overflow-hidden">
@@ -243,13 +247,13 @@ export default function CareerPath({ role = 'employee' }) {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-        <div className="flex items-center justify-between mb-5">
+        {/* <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-bold text-gray-800">Progression Timeline</h2>
           <div className="flex items-center gap-3">
             <button onClick={() => setExpanded(Object.fromEntries(stages.map((s) => [s.id, true])))}  className="text-xs text-blue-600 hover:underline font-medium">Expand all</button>
             <button onClick={() => setExpanded(Object.fromEntries(stages.map((s) => [s.id, false])))} className="text-xs text-gray-400 hover:underline font-medium">Collapse all</button>
           </div>
-        </div>
+        </div> */}
 
         {visibleStages.map((stage, idx) => (
           <StageNode

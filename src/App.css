@@ -1,0 +1,15 @@
+button:hover {
+    cursor: pointer;
+}
+
+.main-background {
+   background: linear-gradient(to right, rgb(14, 116, 144), rgb(21, 94, 117));
+}
+
+.btn-dark {
+    background-image: linear-gradient(to right, #0f2236, #155e75);
+}
+
+.btn-dark:hover {
+    background-image: linear-gradient(to right, #0f2236, #0e7490);
+}

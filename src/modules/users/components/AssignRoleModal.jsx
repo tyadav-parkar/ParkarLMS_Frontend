@@ -4,7 +4,9 @@ import { useAuth } from '@auth';
 
 export default function AssignRoleModal({ employee, roles, onClose, onSuccess }) {
   const { user } = useAuth();
-  const [selectedRoleId, setSelectedRoleId] = useState('');
+  const [selectedRoleId, setSelectedRoleId] = useState(
+    employee?.roles?.[0]?.id?.toString() || ''
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const isSelf = Number(employee?.id) === Number(user?.id);
@@ -51,7 +53,6 @@ export default function AssignRoleModal({ employee, roles, onClose, onSuccess })
           className="w-full border rounded-lg px-3 py-2 text-sm
                      focus:outline-none focus:ring-2 focus:ring-cyan-700"
         >
-          <option value="">- Select Role -</option>
           {roles.map((r) => (
             <option key={r.id} value={r.id}>
               {r.name.replace(/\b\w/g, l => l.toUpperCase())}
@@ -75,7 +76,7 @@ export default function AssignRoleModal({ employee, roles, onClose, onSuccess })
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm rounded-lg border text-gray-600 hover:bg-gray-50"
+            className="px-4 py-2 text-sm font-bold rounded-lg border text-gray-600 hover:bg-gray-50"
           >
             Cancel
           </button>
@@ -83,8 +84,8 @@ export default function AssignRoleModal({ employee, roles, onClose, onSuccess })
           <button
             type="submit"
             disabled={saving || isSelf}
-            className="px-4 py-2 text-sm rounded-lg
-                       bg-gradient-to-r from-[#0f2236] to-cyan-800
+            className="px-4 py-2 font-bold text-sm rounded-lg
+                       bg-linear-to-r from-[#0f2236] to-cyan-800
                        hover:to-cyan-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving...' : 'Assign Role'}

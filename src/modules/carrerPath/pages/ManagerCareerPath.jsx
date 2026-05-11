@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Award, BookOpen, CheckCircle, Lock, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
+import { useAuth } from '@auth';
 
 const EMPLOYEE_DATA = {
   currentRole: 'Senior Developer',
@@ -138,14 +139,14 @@ function StageNode({ stage, isLast, expanded, onToggle }) {
             )}
           </div>
 
-          {stage.milestones.length > 0 && (
+          {/* {stage.milestones.length > 0 && (
             <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${stage.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'}`}
                 style={{ width: `${getStageProgress(stage)}%` }}
               />
             </div>
-          )}
+          )} */}
         </div>
 
         {expanded && stage.milestones.length > 0 && (
@@ -195,7 +196,8 @@ function StageNode({ stage, isLast, expanded, onToggle }) {
 }
 
 export default function CareerPath({ role = 'employee' }) {
-  const data = role === 'manager' ? MANAGER_DATA : EMPLOYEE_DATA;
+  const {user} = useAuth();
+  const data = user.role === 'manager' ? MANAGER_DATA : EMPLOYEE_DATA;
   const { currentRole, band, stages } = data;
 
   const visibleStages = stages.filter((s) => s.status !== 'upcoming');
@@ -224,7 +226,7 @@ export default function CareerPath({ role = 'employee' }) {
             <p className="text-xs font-semibold text-blue-200 uppercase tracking-widest mb-1">Current Role</p>
             <h2 className="text-2xl font-bold">
               {currentRole}
-              <span className="ml-2 text-sm font-semibold bg-white/20 px-2.5 py-0.5 rounded-full">{band}</span>
+              <span className="ml-2 text-sm font-semibold bg-white/20 px-2.5 py-0.5 rounded-full">{user.job_title}</span>
             </h2>
             {nextStage && (
               <p className="text-sm text-blue-100 mt-2">

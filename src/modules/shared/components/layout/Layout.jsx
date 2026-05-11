@@ -49,7 +49,7 @@ export default function Layout() {
           isMobile={isMobile} 
         />
 
-        <main className="flex-1 overflow-y-auto p-6 pt-[calc(3.5rem+1.5rem)]">
+        <main className="flex-1 overflow-y-auto p-2">
           <Outlet />
         </main>
       </div>

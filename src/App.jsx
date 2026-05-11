@@ -19,7 +19,7 @@ import  AdminCourses from '../src/modules/courses/pages/AdminCourses';
 import EmployeeCareerPath from '../src/modules/carrerPath/pages/EmployeeCareerPath';
 import ManagerCareerPath from '../src/modules/carrerPath/pages/ManagerCareerPath';
 
-
+import "./App.css"
 
 
 function RoleBasedRedirect() {

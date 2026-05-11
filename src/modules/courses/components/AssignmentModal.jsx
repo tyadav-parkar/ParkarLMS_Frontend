@@ -133,7 +133,7 @@ export default function AssignmentModal({
           <button
             type="submit"
             disabled={!canSubmit}
-            className="px-4 py-2 text-sm rounded-lg bg-cyan-700 hover:bg-cyan-800 text-white disabled:opacity-60"
+            className="px-4 py-2 text-sm rounded-lg btn-dark text-white disabled:opacity-60"
           >
             {saving ? 'Assigning...' : 'Assign Course'}
           </button>

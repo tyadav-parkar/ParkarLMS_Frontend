@@ -47,10 +47,10 @@ function Avatar({ firstName, lastName, inactive = false }) {
     `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase() || "?";
   return (
     <div
-      className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-sm ${
+      className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-sm ${
         inactive
           ? "bg-gray-200 text-gray-400"
-          : "bg-gradient-to-br from-cyan-400 to-teal-500 text-[#0f2236]"
+          : "bg-[#00c8b4] text-[#0f2236]"
       }`}
     >
       {initials}
@@ -78,13 +78,13 @@ export default function UserManagement() {
   const isActive = activeFilter === "true";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
 
       {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-700 to-cyan-800 px-7 py-6 shadow-lg shadow-cyan-900/20">
-        <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full border border-cyan-700/30 pointer-events-none" />
-        <div className="absolute -right-2 -top-2 w-24 h-24 rounded-full border border-cyan-600/20 pointer-events-none" />
-        <div className="absolute right-16 -bottom-10 w-32 h-32 rounded-full border border-cyan-700/20 pointer-events-none" />
+      <div className="relative overflow-hidden rounded-2xl main-background px-7 py-6 shadow-lg shadow-cyan-900/20">
+        <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full border border-cyan-700/90 pointer-events-none" />
+        <div className="absolute -right-2 -top-2 w-24 h-24 rounded-full border border-cyan-600/50 pointer-events-none" />
+        <div className="absolute right-16 -bottom-10 w-32 h-32 rounded-full border border-cyan-600/50 pointer-events-none" />
 
         <div className="relative flex items-center justify-between">
           <div>
@@ -216,7 +216,7 @@ export default function UserManagement() {
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => setViewUser(u)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-xs font-semibold"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 font-bold bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-lg"
                       >
                         <IdCard className="w-3.5 h-3.5" />
                         Details
@@ -225,7 +225,7 @@ export default function UserManagement() {
                       {can("user_edit") && isActive && Number(u.id) !== Number(user?.id) && (
                         <button
                           onClick={() => setAssignModal(u)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-700 hover:bg-cyan-800 text-white rounded-lg text-xs font-semibold"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 btn-dark text-white disabled:opacity-60 disabled:cursor-not-allowed rounded-lg "  
                         >
                           <UserCog className="w-3.5 h-3.5" />
                           Assign Role

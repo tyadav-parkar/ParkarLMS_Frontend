@@ -36,7 +36,7 @@ export default function TopBar({ isSidebarOpen, isMobile, toggleSidebar }) {
 
   return (
     <header
-      className={`fixed top-0 ${leftOffset} h-14 bg-white border-b border-gray-200 z-20
+      className={`${leftOffset} h-14 bg-white border-b border-gray-200 z-20
         transition-all duration-300 flex items-center justify-between px-4`}
     >
       {/* ── Left: mobile logo/hamburger ────────────────────────────── */}
