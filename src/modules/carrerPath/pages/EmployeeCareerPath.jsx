@@ -12,6 +12,9 @@ export default function EmployeeCareerPath() {
   const [progressData, setProgressData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [defaultCoursesData, setDefaultCoursesData] = useState(null);
+  const [defaultLoading, setDefaultLoading] = useState(false);
+  const [defaultError, setDefaultError] = useState(null);
 
   useEffect(() => {
     if (!idealRoleId) return;
@@ -25,6 +28,25 @@ export default function EmployeeCareerPath() {
         if (!cancelled) setError(err.response?.data?.message || 'Failed to load career progress.');
       })
       .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [idealRoleId]);
+
+  useEffect(() => {
+    if (!idealRoleId) return;
+    let cancelled = false;
+    setDefaultLoading(true);
+    setDefaultError(null);
+    setDefaultCoursesData(null);
+
+    fetch('/api/default-courses/me', { credentials: 'include' })
+      .then(async (res) => {
+        if (!res.ok) throw new Error((await res.json()).message || 'Failed to fetch default courses');
+        return res.json();
+      })
+      .then((json) => { if (!cancelled) setDefaultCoursesData(json.data); })
+      .catch((err) => { if (!cancelled) setDefaultError(err.message || 'Failed to load default courses'); })
+      .finally(() => { if (!cancelled) setDefaultLoading(false); });
 
     return () => { cancelled = true; };
   }, [idealRoleId]);
@@ -53,9 +75,15 @@ export default function EmployeeCareerPath() {
 
       {!loading && !error && steps.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <CompletedCoursesTable stages={steps} />
+          <CompletedCoursesTable stages={steps} managerAssignedCourses={defaultCoursesData?.managerAssignedCourses ?? []} />
           {currentStage && nextStage && (
-            <PendingCoursesTable currentStage={currentStage} nextStage={nextStage} />
+            <PendingCoursesTable
+              currentStage={currentStage}
+              nextStage={nextStage}
+              defaultCourses={defaultCoursesData?.defaultCourses ?? []}
+              certifications={defaultCoursesData?.certifications ?? []}
+              managerAssignedCourses={defaultCoursesData?.managerAssignedCourses ?? []}
+            />
           )}
         </div>
       )}

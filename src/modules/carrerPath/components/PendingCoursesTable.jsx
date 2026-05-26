@@ -20,8 +20,31 @@ const COLUMNS = [
   },
 ];
 
-export default function PendingCoursesTable({ currentStage, nextStage }) {
+export default function PendingCoursesTable({ currentStage, nextStage, defaultCourses = [], certifications = [], managerAssignedCourses = [] }) {
   const requirements = currentStage?.nextRoleRequirements ?? [];
+
+  const normalizedDefaultCourses = defaultCourses.map((c) => ({
+    id: `dc-${c.id}`,
+    name: c.courseName || '',
+    type: c.type || '',
+    status: c.status || '',
+  }));
+
+  const normalizedCertifications = certifications.map((c) => ({
+    id: `cert-${c.id}`,
+    name: c.courseName || '',
+    type: c.type || '',
+    status: c.status || '',
+  }));
+
+  const normalizedManagerCourses = managerAssignedCourses.map((m) => ({
+    id: `mc-${m.id}`,
+    name: m.courseName || m.courseTitle || (m.course && m.course.title) || '',
+    type: m.courseCategory || '',
+    status: m.status || '',
+  }));
+
+  const allData = [...requirements, ...normalizedDefaultCourses, ...normalizedCertifications, ...normalizedManagerCourses];
 
   return (
     <div className="space-y-3">
@@ -34,7 +57,7 @@ export default function PendingCoursesTable({ currentStage, nextStage }) {
 
       <Table
         columns={COLUMNS}
-        data={requirements}
+        data={allData}
         rowKey="id"
         emptyMessage="No requirements defined for the next role."
       />
