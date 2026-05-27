@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { courseService } from '../services/courseService';
-
+ 
 export function useCourses(options = {}) {
   const { skipCatalogFetch = false } = options;
   const [courses, setCourses] = useState([]);
@@ -21,13 +21,13 @@ export function useCourses(options = {}) {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
-
+ 
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('active');
   const [page, setPage] = useState(1);
-
+ 
   const query = useMemo(() => ({
     page,
     limit: pagination.limit,
@@ -36,11 +36,11 @@ export function useCourses(options = {}) {
     difficulty: difficultyFilter,
     status: statusFilter,
   }), [page, pagination.limit, search, categoryFilter, difficultyFilter, statusFilter]);
-
+ 
   const fetchCourses = useCallback(async (overrides = {}) => {
     setLoading(true);
     setError(null);
-
+ 
     try {
       const merged = { ...query, ...overrides };
       const result = await courseService.getCourses(merged);
@@ -58,24 +58,19 @@ export function useCourses(options = {}) {
       setLoading(false);
     }
   }, [query]);
-
+ 
   useEffect(() => {
     if (skipCatalogFetch) return undefined;
     const timer = setTimeout(() => {
       fetchCourses({ page: 1 }).catch(() => {});
     }, 350);
     return () => clearTimeout(timer);
-  }, [search, categoryFilter, difficultyFilter, statusFilter, fetchCourses, skipCatalogFetch]);
-
-  useEffect(() => {
-    if (skipCatalogFetch) return;
-    fetchCourses({ page: 1 }).catch(() => {});
-  }, [skipCatalogFetch]);
-
+  }, [search, categoryFilter, difficultyFilter, statusFilter, skipCatalogFetch]);
+ 
   const goToPage = useCallback((nextPage) => {
     fetchCourses({ page: nextPage }).catch(() => {});
   }, [fetchCourses]);
-
+ 
   const create = useCallback(async (payload) => {
     setSaving(true);
     setFormError('');
@@ -90,7 +85,7 @@ export function useCourses(options = {}) {
       setSaving(false);
     }
   }, [fetchCourses]);
-
+ 
   const update = useCallback(async (id, payload) => {
     setSaving(true);
     setFormError('');
@@ -105,7 +100,7 @@ export function useCourses(options = {}) {
       setSaving(false);
     }
   }, [fetchCourses, page]);
-
+ 
   const archive = useCallback(async (id) => {
     setSaving(true);
     setFormError('');
@@ -120,7 +115,7 @@ export function useCourses(options = {}) {
       setSaving(false);
     }
   }, [fetchCourses, page]);
-
+ 
   const bulkAssign = useCallback(async (courseId, payload) => {
     setSaving(true);
     setFormError('');
@@ -135,7 +130,7 @@ export function useCourses(options = {}) {
       setSaving(false);
     }
   }, [fetchCourses, page]);
-
+ 
   const cancelAssign = useCallback(async (courseId, assignmentId) => {
     setSaving(true);
     setFormError('');
@@ -150,11 +145,11 @@ export function useCourses(options = {}) {
       setSaving(false);
     }
   }, [fetchCourses, page]);
-
+ 
   const getEligibleEmployees = useCallback(async (params = {}) => {
     return courseService.getEligibleEmployees(params);
   }, []);
-
+ 
   const getAssignments = useCallback(async (courseId, params = {}) => {
     setAssignmentsLoading(true);
     setAssignmentError('');
@@ -170,7 +165,7 @@ export function useCourses(options = {}) {
       setAssignmentsLoading(false);
     }
   }, []);
-
+ 
   const getEmployeeAssignments = useCallback(async (params = {}) => {
     setEmployeeAssignmentsLoading(true);
     setEmployeeAssignmentsError('');
@@ -186,7 +181,7 @@ export function useCourses(options = {}) {
       setEmployeeAssignmentsLoading(false);
     }
   }, []);
-
+ 
   const getMyAssignments = useCallback(async (params = {}) => {
     setMyAssignmentsLoading(true);
     setMyAssignmentsError('');
@@ -202,11 +197,11 @@ export function useCourses(options = {}) {
       setMyAssignmentsLoading(false);
     }
   }, []);
-
+ 
   const getMyAssignmentDetail = useCallback(async (assignmentId) => {
     return courseService.getMyAssignmentDetail(assignmentId);
   }, []);
-
+ 
   const startMyAssignment = useCallback(async (assignmentId) => {
     setSaving(true);
     setFormError('');
@@ -219,7 +214,7 @@ export function useCourses(options = {}) {
       setSaving(false);
     }
   }, []);
-
+ 
   const completeMyAssignment = useCallback(async (assignmentId) => {
     setSaving(true);
     setFormError('');
@@ -232,7 +227,7 @@ export function useCourses(options = {}) {
       setSaving(false);
     }
   }, []);
-
+ 
   return {
     courses,
     pagination,
@@ -280,3 +275,5 @@ export function useCourses(options = {}) {
     reload: fetchCourses,
   };
 }
+ 
+ 

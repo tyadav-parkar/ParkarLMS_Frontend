@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { BookOpen, Calendar, CheckCircle2, Clock3, PlayCircle, Search } from 'lucide-react';
 import { Modal, Pagination, TableSkeleton } from '@shared';
 import { useAuth } from '@auth';
-
+ 
 import { useCourses } from '../hooks/useCourses';
-
+ 
 const STATUS_OPTIONS = [
   { value: '', label: 'All' },
   { value: 'assigned', label: 'Assigned' },
@@ -13,37 +13,37 @@ const STATUS_OPTIONS = [
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
-
+ 
 const STATUS_STYLES = {
   assigned: 'bg-slate-100 text-slate-700 border border-slate-200',
   in_progress: 'bg-cyan-100 text-cyan-700 border border-cyan-200',
   completed: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
   cancelled: 'bg-rose-100 text-rose-700 border border-rose-200',
 };
-
+ 
 function formatDate(value) {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
   return date.toLocaleDateString();
 }
-
+ 
 function statusLabel(value) {
   if (value === 'in_progress') return 'In Progress';
   return value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : '-';
 }
-
+ 
 export default function EmployeeCourses({ audience = 'employee' }) {
   const { isRole } = useAuth();
   const isManagerView = audience === 'manager';
   const canAccess = isManagerView
     ? isRole('manager') && !isRole('admin')
     : isRole('employee') && !isRole('manager') && !isRole('admin');
-
+ 
   if (!canAccess) {
     return <Navigate to={isRole('admin') ? '/admin/analytics' : '/manager/dashboard'} replace />;
   }
-
+ 
   const {
     myAssignments,
     myAssignmentsPagination,
@@ -58,7 +58,9 @@ export default function EmployeeCourses({ audience = 'employee' }) {
     formError,
     setFormError,
   } = useCourses({ skipCatalogFetch: true });
-
+ 
+  const hasInitialized = useRef(false);
+ 
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -66,7 +68,13 @@ export default function EmployeeCourses({ audience = 'employee' }) {
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [notice, setNotice] = useState('');
-
+ 
+  useEffect(() => {
+    if (!myAssignmentsLoading) hasInitialized.current = true;
+  }, [myAssignmentsLoading]);
+ 
+  const isTableLoading = myAssignmentsLoading || !hasInitialized.current;
+ 
   const stats = useMemo(() => {
     const base = { assigned: 0, in_progress: 0, completed: 0, cancelled: 0 };
     myAssignments.forEach((row) => {
@@ -74,7 +82,7 @@ export default function EmployeeCourses({ audience = 'employee' }) {
     });
     return base;
   }, [myAssignments]);
-
+ 
   useEffect(() => {
     const timer = setTimeout(() => {
       getMyAssignments({
@@ -85,14 +93,10 @@ export default function EmployeeCourses({ audience = 'employee' }) {
       }).catch(() => {});
       setCurrentPage(1);
     }, 350);
-
+ 
     return () => clearTimeout(timer);
-  }, [search, status, getMyAssignments, myAssignmentsPagination.limit]);
-
-  useEffect(() => {
-    getMyAssignments({ page: 1, limit: myAssignmentsPagination.limit }).catch(() => {});
-  }, []);
-
+  }, [search, status, myAssignmentsPagination.limit]);
+ 
   async function onPageChange(nextPage) {
     setCurrentPage(nextPage);
     await getMyAssignments({
@@ -102,7 +106,7 @@ export default function EmployeeCourses({ audience = 'employee' }) {
       search: search || undefined,
     }).catch(() => {});
   }
-
+ 
   async function openDetails(assignmentId) {
     setDetailLoading(true);
     setMyAssignmentsError('');
@@ -115,7 +119,7 @@ export default function EmployeeCourses({ audience = 'employee' }) {
       setDetailLoading(false);
     }
   }
-
+ 
   async function refreshCurrentPage() {
     await getMyAssignments({
       page: currentPage,
@@ -124,7 +128,7 @@ export default function EmployeeCourses({ audience = 'employee' }) {
       search: search || undefined,
     });
   }
-
+ 
   async function runStart(assignmentId) {
     setActionLoadingId(assignmentId);
     setFormError('');
@@ -143,7 +147,7 @@ export default function EmployeeCourses({ audience = 'employee' }) {
       setActionLoadingId(null);
     }
   }
-
+ 
   async function runComplete(assignmentId) {
     setActionLoadingId(assignmentId);
     setFormError('');
@@ -162,7 +166,7 @@ export default function EmployeeCourses({ audience = 'employee' }) {
       setActionLoadingId(null);
     }
   }
-
+ 
   return (
     <div className="space-y-6">
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-teal-700 to-teal-800 px-7 py-6 shadow-lg shadow-teal-900/20">
@@ -177,7 +181,7 @@ export default function EmployeeCourses({ audience = 'employee' }) {
           </p>
         </div>
       </div>
-
+ 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-white border border-gray-200 rounded-xl px-4 py-3">
           <p className="text-xs text-gray-500 uppercase">Assigned</p>
@@ -196,7 +200,7 @@ export default function EmployeeCourses({ audience = 'employee' }) {
           <p className="text-2xl font-bold text-rose-700 mt-1">{stats.cancelled}</p>
         </div>
       </div>
-
+ 
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 gap-3 flex-wrap">
           <div className="relative">
@@ -221,10 +225,10 @@ export default function EmployeeCourses({ audience = 'employee' }) {
             </select>
           </div>
         </div>
-
+ 
         {notice && <p className="px-6 pt-4 text-sm text-emerald-700">{notice}</p>}
         {(myAssignmentsError || formError) && <p className="px-6 pt-4 text-sm text-rose-600">{myAssignmentsError || formError}</p>}
-
+ 
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[900px]">
             <thead className="bg-gray-50 border-b border-gray-100">
@@ -239,9 +243,9 @@ export default function EmployeeCourses({ audience = 'employee' }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {myAssignmentsLoading && <TableSkeleton rows={4} cols={7} />}
-
-              {!myAssignmentsLoading && myAssignments.length === 0 && (
+              {isTableLoading && <TableSkeleton rows={4} cols={7} />}
+ 
+              {!isTableLoading && myAssignments.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                     <BookOpen className="w-10 h-10 mx-auto text-gray-300 mb-2" />
@@ -249,8 +253,8 @@ export default function EmployeeCourses({ audience = 'employee' }) {
                   </td>
                 </tr>
               )}
-
-              {!myAssignmentsLoading && myAssignments.map((assignment) => {
+ 
+              {!isTableLoading && myAssignments.map((assignment) => {
                 const isBusy = saving && actionLoadingId === assignment.id;
                 return (
                   <tr key={assignment.id} className="hover:bg-teal-50/30">
@@ -308,14 +312,14 @@ export default function EmployeeCourses({ audience = 'employee' }) {
             </tbody>
           </table>
         </div>
-
+ 
         <Pagination
           page={myAssignmentsPagination.page}
           totalPages={myAssignmentsPagination.totalPages}
           onChange={onPageChange}
         />
       </div>
-
+ 
       {selectedAssignment && (
         <Modal title="Course Details" onClose={() => setSelectedAssignment(null)}>
           {detailLoading ? (
@@ -326,7 +330,7 @@ export default function EmployeeCourses({ audience = 'employee' }) {
                 <h3 className="text-base font-semibold text-gray-800">{selectedAssignment.course?.title || '-'}</h3>
                 <p className="text-sm text-gray-500 mt-1">{selectedAssignment.course?.description || 'No description provided.'}</p>
               </div>
-
+ 
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-lg bg-gray-50 p-3 border border-gray-100">
                   <p className="text-xs text-gray-500 uppercase">Status</p>
@@ -345,20 +349,20 @@ export default function EmployeeCourses({ audience = 'employee' }) {
                   <p className="font-semibold text-gray-800 mt-1">{formatDate(selectedAssignment.dueDate)}</p>
                 </div>
               </div>
-
+ 
               <div className="rounded-lg bg-gray-50 p-3 border border-gray-100 text-sm">
                 <p className="text-xs text-gray-500 uppercase">Assigned By</p>
                 <p className="font-semibold text-gray-800 mt-1">{selectedAssignment.assignedBy?.fullName || '-'}</p>
                 <p className="text-gray-500">{selectedAssignment.assignedBy?.email || '-'}</p>
               </div>
-
+ 
               {selectedAssignment.notes && (
                 <div className="rounded-lg bg-amber-50 p-3 border border-amber-100 text-sm">
                   <p className="text-xs text-amber-700 uppercase">Assignment Note</p>
                   <p className="text-amber-900 mt-1">{selectedAssignment.notes}</p>
                 </div>
               )}
-
+ 
               <div className="flex items-center justify-end gap-2 pt-1">
                 {selectedAssignment.status === 'assigned' && (
                   <button
@@ -395,3 +399,4 @@ export default function EmployeeCourses({ audience = 'employee' }) {
     </div>
   );
 }
+ 

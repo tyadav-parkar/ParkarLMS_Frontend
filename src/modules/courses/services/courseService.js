@@ -102,8 +102,8 @@ export const courseService = {
     return data.data;
   },
 
-  async getEligibleEmployees({ page = 1, limit = 10, search = '', role = '', department = '', jobTitle = '' } = {}) {
-    const query = buildParams({ page, limit, search, role, department, jobTitle });
+  async getEligibleEmployees({ page = 1, limit = 10, search = '', role = '', department = '', jobTitle = '', courseId = '' } = {}) {
+    const query = buildParams({ page, limit, search, role, department, jobTitle, course_id: courseId });
     const { data } = await api.get(`/courses/eligible-employees?${query}`);
     return {
       data: data.data ?? [],
