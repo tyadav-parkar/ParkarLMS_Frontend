@@ -16,6 +16,7 @@ export default function Table({
   rowClassName,
   className = '',
   wrapperClassName = '',
+  maxHeight,
 }) {
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState(null);
@@ -36,10 +37,13 @@ export default function Table({
 
   return (
     <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${wrapperClassName}`.trim()}>
-      <div className="overflow-x-auto">
+      <div
+        className={`overflow-x-auto${maxHeight ? ' overflow-y-auto' : ''}`}
+        style={maxHeight ? { maxHeight } : undefined}
+      >
         <TableEl className={className}>
 
-          <THead>
+          <THead className={maxHeight ? 'sticky top-0 z-10' : ''}>
             <Tr>
               {columns.map((col) => (
                 <Th

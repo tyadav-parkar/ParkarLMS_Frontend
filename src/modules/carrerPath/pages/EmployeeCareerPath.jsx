@@ -32,6 +32,9 @@ export default function EmployeeCareerPath() {
     return () => { cancelled = true; };
   }, [idealRoleId]);
 
+  console.log("progressData -",progressData);
+  
+
   useEffect(() => {
     if (!idealRoleId) return;
     let cancelled = false;
@@ -75,7 +78,12 @@ export default function EmployeeCareerPath() {
 
       {!loading && !error && steps.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <CompletedCoursesTable stages={steps} managerAssignedCourses={defaultCoursesData?.managerAssignedCourses ?? []} />
+          <CompletedCoursesTable
+              stages={steps}
+              defaultCourses={defaultCoursesData?.defaultCourses ?? []}
+              certifications={defaultCoursesData?.certifications ?? []}
+              managerAssignedCourses={defaultCoursesData?.managerAssignedCourses ?? []}
+            />
           {currentStage && nextStage && (
             <PendingCoursesTable
               currentStage={currentStage}

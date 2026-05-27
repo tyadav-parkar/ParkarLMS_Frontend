@@ -1,6 +1,18 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@auth';
 import { getExtraNavItems } from '../../utils/navUtils';
+import {
+  LayoutDashboard,
+  Route,
+  BookOpen,
+  Award,
+  Users,
+  GraduationCap,
+  BarChart2,
+  UserCog,
+  KeyRound,
+  FileDown,
+} from 'lucide-react';
 
 const linkClass = ({ isActive, isOpen, isMobile }) =>
   `flex items-center gap-3 px-1 py-2.5 rounded-lg text-sm text-white/100 font-medium transition-all duration-200 ${
@@ -115,10 +127,10 @@ export default function Sidebar({ isOpen = true, toggleSidebar, isMobile = false
 
         {isRole('employee') && !isRole('manager') && !isRole('admin') && (
           <>
-            <NavItem to="/employee/dashboard"    icon="📊" label="Dashboard"        isOpen={isOpen} isMobile={isMobile} />
-            <NavItem to="/employee/career-path"  icon="🛤️" label="Career Path"      isOpen={isOpen} isMobile={isMobile} />
-            <NavItem to="/employee/courses"      icon="📚" label="My Courses"       isOpen={isOpen} isMobile={isMobile} />
-            <NavItem to="/employee/certificates" icon="🏆" label="My Certificates"  isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/employee/dashboard"    icon={<LayoutDashboard size={18} />} label="Dashboard"        isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/employee/career-path"  icon={<Route size={18} />}           label="Career Path"      isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/employee/courses"      icon={<BookOpen size={18} />}        label="My Courses"       isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/employee/certificates" icon={<Award size={18} />}           label="My Certificates"  isOpen={isOpen} isMobile={isMobile} />
             {extraNavItems.length > 0 && (
               <>
                 <SectionLabel label="Extra Access" isOpen={isOpen} isMobile={isMobile} />
@@ -132,14 +144,14 @@ export default function Sidebar({ isOpen = true, toggleSidebar, isMobile = false
 
         {isRole('manager') && !isRole('admin') && (
           <>
-            <NavItem to="/manager/dashboard"    icon="📊" label="Dashboard"          isOpen={isOpen} isMobile={isMobile} />
-            <NavItem to="/employee/career-path" icon="🛤️" label="Career Path"        isOpen={isOpen} isMobile={isMobile} />
-            <NavItem to="/manager/my-courses"   icon="📚" label="My Courses"          isOpen={isOpen} isMobile={isMobile} />
-            <NavItem to="/manager/team"         icon="👥" label="My Team"            isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/manager/dashboard"    icon={<LayoutDashboard size={18} />} label="Dashboard"          isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/employee/career-path" icon={<Route size={18} />}           label="Career Path"        isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/manager/my-courses"   icon={<BookOpen size={18} />}        label="My Courses"          isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/manager/team"         icon={<Users size={18} />}           label="My Team"            isOpen={isOpen} isMobile={isMobile} />
             {(can('course_view') || can('course_assign') || can('course_edit')) && (
-              <NavItem to="/manager/courses"    icon="🎓" label="Course Management"  isOpen={isOpen} isMobile={isMobile} />
+              <NavItem to="/manager/courses"    icon={<GraduationCap size={18} />}   label="Course Management"  isOpen={isOpen} isMobile={isMobile} />
             )}
-            <NavItem to="/manager/certificates" icon="🏆" label="My Certificates"   isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/manager/certificates" icon={<Award size={18} />}           label="My Certificates"   isOpen={isOpen} isMobile={isMobile} />
             {extraNavItems.length > 0 && (
               <>
                 <SectionLabel label="Extra Access" isOpen={isOpen} isMobile={isMobile} />
@@ -153,11 +165,11 @@ export default function Sidebar({ isOpen = true, toggleSidebar, isMobile = false
 
         {isRole('admin') && (
           <>
-            <NavItem to="/admin/analytics" icon="📈" label="Dashboard"           isOpen={isOpen} isMobile={isMobile} />
-            <NavItem to="/admin/users"     icon="👤" label="User Management"     isOpen={isOpen} isMobile={isMobile} />
-            <NavItem to="/admin/courses"   icon="🎓" label="Course Management"   isOpen={isOpen} isMobile={isMobile} />
-            <NavItem to="/admin/roles"     icon="🔑" label="Roles & Permissions" isOpen={isOpen} isMobile={isMobile} />
-            <NavItem to="/admin/import"    icon="📥" label="Import Employees"    isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/admin/analytics" icon={<BarChart2 size={18} />}      label="Dashboard"           isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/admin/users"     icon={<UserCog size={18} />}        label="User Management"     isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/admin/courses"   icon={<GraduationCap size={18} />}  label="Course Management"   isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/admin/roles"     icon={<KeyRound size={18} />}       label="Roles & Permissions" isOpen={isOpen} isMobile={isMobile} />
+            <NavItem to="/admin/import"    icon={<FileDown size={18} />}       label="Import Employees"    isOpen={isOpen} isMobile={isMobile} />
           </>
         )}
       </nav>

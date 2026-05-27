@@ -134,6 +134,12 @@ export default function ImportPage() {
     if (f) selectFile(f);
   }, [selectFile]);
 
+  const onFileChange = useCallback((e) => {
+    const f = e.target.files?.[0];
+    if (f) selectFile(f);
+    e.target.value = '';
+  }, [selectFile]);
+
   // Stable callback for pagination — won't cause ImportHistoryTable to re-render
   const handlePageChange = useCallback((page) => {
     fetchLogs({ page });
@@ -198,7 +204,7 @@ export default function ImportPage() {
               type="file"
               accept=".xlsx,.xls"
               className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) selectFile(f); }}
+              onChange={onFileChange}
             />
             {file ? (
               <div className="flex flex-col items-center gap-2">
